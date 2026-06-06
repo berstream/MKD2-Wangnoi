@@ -527,7 +527,7 @@ td{padding:11px 12px;vertical-align:middle;white-space:nowrap}
         <label>ช่วงเวลา</label>
         <select class="rf-sel" id="rfType" onchange="onRfTypeChange()">
           <option value="day">รายวัน</option>
-          <option value="week">รายสัปดาห์</option>
+          <option value="week">รายสัปดาห์ (เลือกวัน)</option>
           <option value="month" selected>รายเดือน</option>
           <option value="all">ทั้งหมด</option>
         </select>
@@ -536,12 +536,17 @@ td{padding:11px 12px;vertical-align:middle;white-space:nowrap}
         <label id="rfValLbl">เดือน</label>
         <input class="rf-inp" type="month" id="rfVal">
       </div>
+      <div class="rf-group" id="rfWeekStartGroup" style="display:none">
+        <label>วันเริ่มต้น</label>
+        <input class="rf-inp" type="date" id="rfWeekStart" onchange="onWeekStartChange()">
+      </div>
+      <div class="rf-group" id="rfWeekEndGroup" style="display:none">
+        <label>วันสิ้นสุด</label>
+        <input class="rf-inp" type="date" id="rfWeekEnd">
+      </div>
       <div class="rf-group">
         <label>รหัสพนักงาน (ว่าง = ทุกคน)</label>
         <input class="rf-inp" type="text" id="rfEmp" placeholder="เช่น TH061233" style="text-transform:uppercase">
-      </div>
-      <div class="rf-group" style="display:flex;align-items:flex-end">
-        <!-- empty spacer -->
       </div>
       <div class="rf-actions">
         <button class="btn-search" onclick="loadReport()">🔍 ดูรายงาน</button>
@@ -574,7 +579,7 @@ const GAS_URL      = 'https://script.google.com/macros/s/AKfycbxv_PGtkk09qrTtd00
 const ADMIN_PW_KEY = 'ADMIN_PASSWORD';   // key สำหรับดึง password จาก GAS
 const OFFICE_LAT   = 14.1788252;
 const OFFICE_LNG   = 100.6490192;
-const MAX_RADIUS   = 100;
+const MAX_RADIUS   = 50;
 
 // Admin password — เปลี่ยนได้ตามต้องการ (หรือ verify ผ่าน GAS ก็ได้)
 const ADMIN_PASSWORD = 'mkd2admin';
@@ -794,21 +799,50 @@ function doLogout() {
 // REPORT — FILTER
 // ============================================================
 function onRfTypeChange() {
-  const t=document.getElementById('rfType').value;
-  const g=document.getElementById('rfValGroup');
-  const l=document.getElementById('rfValLbl');
-  const i=document.getElementById('rfVal');
-  if (t==='all') { g.style.visibility='hidden'; return; }
-  g.style.visibility='visible';
-  if (t==='day')   { l.textContent='วันที่'; i.type='date'; i.value=new Date().toISOString().slice(0,10); }
-  if (t==='week')  { l.textContent='สัปดาห์'; i.type='week'; i.value=getWeekVal(); }
-  if (t==='month') { l.textContent='เดือน'; i.type='month'; i.value=new Date().toISOString().slice(0,7); }
+  const t = document.getElementById('rfType').value;
+  const g  = document.getElementById('rfValGroup');
+  const wS = document.getElementById('rfWeekStartGroup');
+  const wE = document.getElementById('rfWeekEndGroup');
+  const l  = document.getElementById('rfValLbl');
+  const i  = document.getElementById('rfVal');
+  const today = new Date().toISOString().slice(0,10);
+
+  // hide all first
+  g.style.display='none'; wS.style.display='none'; wE.style.display='none';
+
+  if (t==='all') return;
+
+  if (t==='day') {
+    g.style.display=''; l.textContent='วันที่'; i.type='date'; i.value=today;
+  }
+  if (t==='week') {
+    wS.style.display=''; wE.style.display='';
+    // default: จันทร์-อาทิตย์ของสัปดาห์นี้
+    const mon = getMondayOf(new Date());
+    const sun = new Date(mon); sun.setDate(sun.getDate()+6);
+    document.getElementById('rfWeekStart').value = mon.toISOString().slice(0,10);
+    document.getElementById('rfWeekEnd').value   = sun.toISOString().slice(0,10);
+  }
+  if (t==='month') {
+    g.style.display=''; l.textContent='เดือน'; i.type='month'; i.value=new Date().toISOString().slice(0,7);
+  }
 }
 
-function getWeekVal() {
-  const n=new Date(), j=new Date(n.getFullYear(),0,1);
-  const w=Math.ceil(((n-j)/86400000+j.getDay()+1)/7);
-  return `${n.getFullYear()}-W${String(w).padStart(2,'0')}`;
+function getMondayOf(d) {
+  const day = d.getDay(); // 0=Sun
+  const diff = (day===0) ? -6 : 1-day;
+  const mon = new Date(d);
+  mon.setDate(d.getDate()+diff);
+  return mon;
+}
+
+function onWeekStartChange() {
+  // อัปเดต end = start + 6 วัน อัตโนมัติ
+  const start = document.getElementById('rfWeekStart').value;
+  if (!start) return;
+  const d = new Date(start);
+  d.setDate(d.getDate()+6);
+  document.getElementById('rfWeekEnd').value = d.toISOString().slice(0,10);
 }
 
 // ============================================================
@@ -818,12 +852,21 @@ let reportData=[];
 
 async function loadReport() {
   if (!sessionStorage.getItem('mkd2_admin')) { goTo('login'); return; }
-  const t=document.getElementById('rfType').value;
-  const v=document.getElementById('rfVal').value;
-  const e=document.getElementById('rfEmp').value.trim();
+  const t = document.getElementById('rfType').value;
+  const e = document.getElementById('rfEmp').value.trim();
+  let v='', v2='';
+
+  if (t==='week') {
+    v  = document.getElementById('rfWeekStart').value;
+    v2 = document.getElementById('rfWeekEnd').value;
+    if (!v||!v2) { showTblError('กรุณาเลือกวันเริ่มต้นและวันสิ้นสุด'); return; }
+  } else {
+    v = document.getElementById('rfVal').value;
+  }
+
   showTblLoading();
   try {
-    const res=await gasPost({action:'get_report',filter_type:t,filter_value:v,emp_id:e});
+    const res=await gasPost({action:'get_report',filter_type:t,filter_value:v,filter_value2:v2,emp_id:e});
     if (res.success) {
       reportData=res.data||[];
       renderTable(reportData);
