@@ -480,6 +480,14 @@ tbody tr:hover { background: var(--bg3); }
           <input type="date" class="input-field" id="dTo" style="font-size:14px;padding:11px 12px;">
         </div>
       </div>
+      <div class="input-group" style="margin-bottom:12px;">
+        <label class="input-label">ค้นหารหัสพนักงาน (ไม่กรอก = แสดงทั้งหมด)</label>
+        <input type="text" class="input-field" id="empSearch"
+               placeholder="เช่น TH061378"
+               style="font-size:14px;padding:11px 12px;letter-spacing:1px;"
+               oninput="this.value=this.value.toUpperCase()"
+               onkeydown="if(event.key==='Enter')doReport()">
+      </div>
       <div class="btn-row">
         <button class="sm-btn" onclick="qToday()">วันนี้</button>
         <button class="sm-btn" onclick="qWeek()">สัปดาห์นี้</button>
@@ -689,54 +697,153 @@ function qMonth() {
   document.getElementById('dTo').value   = fmt(new Date(n.getFullYear(), n.getMonth() + 1, 0));
 }
 
+// ============== REPORT DATA STORE ==============
+let reportData = [];
+
 async function doReport() {
   const from = document.getElementById('dFrom').value;
   const to   = document.getElementById('dTo').value;
-  if (!from || !to) { toast('⚠', 'กรุณาเลือกช่วงวันที่', 'err'); return; }
+  const emp  = document.getElementById('empSearch').value.trim().toUpperCase();
+  if (!from || !to) { toast('\u26a0', 'กรุณาเลือกช่วงวันที่', 'err'); return; }
 
   const btn = document.getElementById('rptBtn');
   const out = document.getElementById('rptOut');
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner" style="border-color:rgba(255,255,255,.4);border-top-color:#fff;"></span> โหลด';
-  out.innerHTML = '<div class="loading-ph">⏳ กำลังโหลดข้อมูล...</div>';
+  out.innerHTML = '<div class="loading-ph">\u23f3 กำลังโหลดข้อมูล...</div>';
 
   try {
-    const d = await callGAS({ action: 'report', dateFrom: from, dateTo: to });
+    const payload = { action: 'report', dateFrom: from, dateTo: to };
+    if (emp) payload.emp_id = emp;
+    const d = await callGAS(payload);
     if (!d.success || !d.rows || !d.rows.length) {
-      out.innerHTML = '<div class="card" style="text-align:center;"><div style="font-size:36px;">📭</div><div style="margin-top:8px;color:var(--text2);">ไม่พบข้อมูลในช่วงนี้</div></div>';
+      reportData = [];
+      out.innerHTML = '<div class="card" style="text-align:center;"><div style="font-size:36px;">\ud83d\udcad</div><div style="margin-top:8px;color:var(--text2);">ไม่พบข้อมูลในช่วงนี้</div></div>';
       return;
     }
-    renderReport(d.rows);
+    reportData = d.rows;
+    renderReport(reportData);
   } catch (e) {
-    out.innerHTML = `<div class="card" style="color:var(--red);">⚠ ${e.message}</div>`;
+    out.innerHTML = `<div class="card" style="color:var(--red);">\u26a0 ${e.message}</div>`;
   } finally {
     btn.disabled = false;
-    btn.innerHTML = '🔍 โหลด';
+    btn.innerHTML = '\ud83d\udd0d โหลด';
   }
 }
 
 function renderReport(rows) {
-  const html = `
+  const empSearch = document.getElementById('empSearch').value.trim();
+  const title = empSearch
+    ? `\ud83d\udccb ${rows.length} รายการ (รหัส: ${empSearch})`
+    : `\ud83d\udccb รายงาน ${rows.length} รายการ`;
+
+  const tbody = rows.map(r => {
+    const hasOut  = r.checkout && r.checkout !== '';
+    const hasWork = r.workHours && r.workHours !== '';
+    const hasOT   = r.ot && r.ot !== '' && r.ot !== '0:00';
+    return `<tr>
+      <td>${r.employeeId||''}</td>
+      <td>${r.name||''}</td>
+      <td>${r.position||''}</td>
+      <td>${r.date||''}</td>
+      <td><span class="tag in">เข้า</span> ${r.checkin||'-'}</td>
+      <td>${hasOut ? '<span class="tag out">ออก</span> '+r.checkout : '<span style="color:var(--text3);">-</span>'}</td>
+      <td>${hasWork ? r.workHours+' ชม.' : '-'}</td>
+      <td>${hasOT ? '<span class="r-badge ot">'+r.ot+' ชม.</span>' : '-'}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('rptOut').innerHTML = `
     <div class="card">
-      <div class="card-title" style="margin-bottom:12px;">📋 รายงาน ${rows.length} รายการ</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px;">
+        <div class="card-title" style="margin-bottom:0;">${title}</div>
+        <div style="display:flex;gap:8px;">
+          <button class="sm-btn" onclick="exportCSV()" title="ดาวน์โหลด CSV">⬇ CSV</button>
+          <button class="sm-btn" onclick="printReport()" title="พิมพ์ / Save PDF">\ud83d\udda8 Print/PDF</button>
+        </div>
+      </div>
       <div class="table-wrap">
-        <table>
+        <table id="reportTable">
           <thead><tr>
-            <th>รหัส</th><th>ชื่อ</th><th>ประเภท</th><th>วันที่</th><th>เวลา</th>
+            <th>รหัส</th><th>ชื่อ</th><th>ตำแหน่ง</th><th>วันที่</th>
+            <th>เวลาเข้า</th><th>เวลาออก</th><th>ชั่วโมง</th><th>OT</th>
           </tr></thead>
-          <tbody>
-            ${rows.map(r => `<tr>
-              <td>${r.employeeId || ''}</td>
-              <td>${r.name || ''}</td>
-              <td><span class="tag ${r.type === 'checkin' ? 'in' : 'out'}">${r.type === 'checkin' ? 'เข้า' : 'ออก'}</span></td>
-              <td>${r.date || ''}</td>
-              <td>${r.time || ''}</td>
-            </tr>`).join('')}
-          </tbody>
+          <tbody>${tbody}</tbody>
         </table>
       </div>
     </div>`;
-  document.getElementById('rptOut').innerHTML = html;
+}
+
+// ============== EXPORT CSV ==============
+function exportCSV() {
+  if (!reportData.length) return;
+  const header = ['รหัสพนักงาน','ชื่อ','ตำแหน่ง','ระดับ','วันที่','เวลาเข้า','เวลาออก','ชั่วโมงทำงาน','OT'];
+  const rows = reportData.map(r => [
+    r.employeeId||'', r.name||'', r.position||'', r.level||'',
+    r.date||'', r.checkin||'', r.checkout||'', r.workHours||'', r.ot||''
+  ]);
+  const csv = [header, ...rows].map(r =>
+    r.map(v => '"' + String(v).replace(/"/g,'""') + '"').join(',')
+  ).join('\n');
+  const bom = '\uFEFF';
+  const blob = new Blob([bom + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const from = document.getElementById('dFrom').value;
+  const to   = document.getElementById('dTo').value;
+  a.href = url;
+  a.download = `MKD2_Report_${from}_to_${to}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('\u2713', 'ดาวน์โหลด CSV แล้ว', 'ok', 2000);
+}
+
+// ============== PRINT / PDF ==============
+function printReport() {
+  if (!reportData.length) return;
+  const from = document.getElementById('dFrom').value;
+  const to   = document.getElementById('dTo').value;
+  const emp  = document.getElementById('empSearch').value.trim();
+  const title = emp ? `รายงาน MKD2 — ${emp} (${from} ถึง ${to})` : `รายงาน MKD2 (${from} ถึง ${to})`;
+
+  const tbody = reportData.map(r => `<tr>
+    <td>${r.employeeId||''}</td>
+    <td>${r.name||''}</td>
+    <td>${r.position||''}</td>
+    <td>${r.date||''}</td>
+    <td>${r.checkin||'-'}</td>
+    <td>${r.checkout||'-'}</td>
+    <td>${r.workHours||'-'}</td>
+    <td>${r.ot&&r.ot!=='0:00'?r.ot:'-'}</td>
+  </tr>`).join('');
+
+  const win = window.open('', '_blank');
+  win.document.write(`<!DOCTYPE html><html lang="th"><head>
+    <meta charset="UTF-8">
+    <title>${title}</title>
+    <style>
+      body{font-family:'Sarabun',sans-serif;margin:20px;color:#111;font-size:12px;}
+      h2{font-size:16px;margin-bottom:4px;}
+      p{color:#555;margin-bottom:12px;font-size:12px;}
+      table{width:100%;border-collapse:collapse;}
+      th{background:#1565c0;color:#fff;padding:8px 6px;text-align:left;font-size:11px;}
+      td{padding:7px 6px;border-bottom:1px solid #ddd;}
+      tr:nth-child(even){background:#f4f6fb;}
+      @media print{button{display:none}}
+    </style>
+  </head><body>
+    <h2>\ud83c\udfe2 MKD2 Wangnoi — รายงานการเข้างาน</h2>
+    <p>${title} | พิมพ์เมื่อ: ${new Date().toLocaleString('th-TH')}</p>
+    <table>
+      <thead><tr>
+        <th>รหัส</th><th>ชื่อ</th><th>ตำแหน่ง</th><th>วันที่</th>
+        <th>เวลาเข้า</th><th>เวลาออก</th><th>ชั่วโมง</th><th>OT</th>
+      </tr></thead>
+      <tbody>${tbody}</tbody>
+    </table>
+    <script>window.onload=()=>window.print()<\/script>
+  </body></html>`);
+  win.document.close();
 }
 
 // ============== SERVER STATUS ==============
