@@ -1,1005 +1,837 @@
 <!DOCTYPE html>
-<html lang="th">
+<html lang="th" data-theme="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>MKD2 — ระบบลงเวลา</title>
-<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&family=Kanit:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
 /* ============================================================
-   VARIABLES & RESET
-============================================================ */
-:root {
-  --bg:        #070c18;
-  --surface:   #0f1724;
-  --surface2:  #162032;
-  --border:    #1c2d45;
-  --accent:    #00e5b8;
-  --accent2:   #2979ff;
-  --warn:      #ff4f4f;
-  --ot:        #ffb300;
-  --text:      #dde6f5;
-  --text-dim:  #5a6e8a;
-  --checkin:   #00e5b8;
-  --checkout:  #ff6b35;
-  --r: 18px;
-  --shadow: 0 12px 40px rgba(0,0,0,0.5);
+   THEME VARIABLES
+   ============================================================ */
+:root { --transition: 0.25s cubic-bezier(.4,0,.2,1); }
+
+[data-theme="dark"] {
+  --bg:       #0b0f1a;
+  --bg2:      #111827;
+  --bg3:      #1a2235;
+  --card:     #161d2f;
+  --border:   #2a3a58;
+  --border2:  #1e2d47;
+  --text:     #e2e8f8;
+  --text2:    #7a8db0;
+  --text3:    #4a5a7a;
+  --green:    #00e676;
+  --green2:   rgba(0,230,118,0.12);
+  --red:      #ff5252;
+  --red2:     rgba(255,82,82,0.12);
+  --blue:     #4fc3f7;
+  --yellow:   #ffd740;
+  --grad-in:  linear-gradient(135deg,#00e676,#00bfa5);
+  --grad-out: linear-gradient(135deg,#ff5252,#d50000);
+  --shadow:   0 8px 32px rgba(0,0,0,.55);
+  --shadow2:  0 2px 8px rgba(0,0,0,.35);
+  --glow-g:   0 0 10px rgba(0,230,118,.4);
+  --glow-r:   0 0 10px rgba(255,82,82,.4);
+  --glow-b:   0 0 10px rgba(79,195,247,.3);
 }
-*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-html,body{height:100%;overflow:hidden}
-body{
-  background:var(--bg);
-  color:var(--text);
-  font-family:'Sarabun',sans-serif;
-  background-image:
-    radial-gradient(ellipse 60% 40% at 10% 0%,rgba(0,229,184,.07) 0%,transparent 70%),
-    radial-gradient(ellipse 50% 40% at 90% 100%,rgba(41,121,255,.07) 0%,transparent 70%);
+
+[data-theme="light"] {
+  --bg:       #f0f4fc;
+  --bg2:      #ffffff;
+  --bg3:      #f5f8ff;
+  --card:     #ffffff;
+  --border:   #dde4f4;
+  --border2:  #e8eef8;
+  --text:     #1a2340;
+  --text2:    #5a6890;
+  --text3:    #9aa8c8;
+  --green:    #00b96b;
+  --green2:   rgba(0,185,107,0.10);
+  --red:      #e53935;
+  --red2:     rgba(229,57,53,0.10);
+  --blue:     #1976d2;
+  --yellow:   #f9a825;
+  --grad-in:  linear-gradient(135deg,#00c853,#009688);
+  --grad-out: linear-gradient(135deg,#e53935,#b71c1c);
+  --shadow:   0 8px 32px rgba(30,50,120,.12);
+  --shadow2:  0 2px 8px rgba(30,50,120,.08);
+  --glow-g:   0 0 8px rgba(0,185,107,.25);
+  --glow-r:   0 0 8px rgba(229,57,53,.25);
+  --glow-b:   0 0 8px rgba(25,118,210,.2);
 }
 
 /* ============================================================
-   PAGE SYSTEM
-============================================================ */
-.page{
-  position:fixed;inset:0;
-  display:flex;flex-direction:column;
-  align-items:center;justify-content:center;
-  padding:20px;
-  opacity:0;pointer-events:none;
-  transition:opacity .3s,transform .3s;
-  transform:translateY(16px);
-  overflow-y:auto;
+   RESET & BASE
+   ============================================================ */
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+
+body {
+  font-family: 'Segoe UI','Noto Sans Thai',sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  transition: background var(--transition), color var(--transition);
+  -webkit-font-smoothing: antialiased;
 }
-.page.active{opacity:1;pointer-events:all;transform:translateY(0)}
 
 /* ============================================================
-   CARD
-============================================================ */
-.card{
-  background:var(--surface);
+   HEADER
+   ============================================================ */
+.header {
+  position: sticky; top:0; z-index:200;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  padding: 0 18px;
+  height: 58px;
+  display: flex; align-items: center; justify-content: space-between;
+  box-shadow: var(--shadow2);
+  transition: background var(--transition), border-color var(--transition);
+}
+.header-left { display:flex; align-items:center; gap:10px; }
+.header-logo { font-size:22px; }
+.header-text .title { font-size:16px; font-weight:700; letter-spacing:.3px; }
+.header-text .sub { font-size:11px; color:var(--text2); margin-top:1px; }
+
+.theme-btn {
+  position:relative;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  padding: 7px 14px;
+  cursor: pointer;
+  display: flex; align-items:center; gap:6px;
+  font-size: 13px; font-weight:600;
+  color: var(--text);
+  transition: all var(--transition);
+  white-space: nowrap;
+}
+.theme-btn:hover { border-color:var(--blue); box-shadow:var(--glow-b); }
+.theme-btn .icon { font-size:15px; transition: transform .4s; }
+[data-theme="light"] .theme-btn .icon { transform: rotate(180deg); }
+
+/* ============================================================
+   PAGES
+   ============================================================ */
+.page { display:none; padding:18px; max-width:500px; margin:0 auto; }
+.page.active { display:block; animation: fadeUp .25s ease; }
+@keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+
+/* ============================================================
+   COMPONENTS
+   ============================================================ */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 18px;
+  margin-bottom: 14px;
+  box-shadow: var(--shadow2);
+  transition: background var(--transition), border-color var(--transition);
+}
+
+.card-title {
+  font-size:14px; font-weight:700; color:var(--text2);
+  text-transform: uppercase; letter-spacing:.8px;
+  margin-bottom: 14px;
+  display: flex; align-items:center; gap:6px;
+}
+
+/* STATUS BAR */
+.status-bar {
+  display:flex; align-items:center; gap:10px;
+  padding: 11px 14px;
+  border-radius: 12px;
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  font-size:14px; font-weight:500;
+  transition: all var(--transition);
+}
+.dot {
+  width:10px; height:10px; border-radius:50%; flex-shrink:0;
+  transition: background .3s, box-shadow .3s;
+}
+.dot.green  { background:var(--green);  box-shadow:var(--glow-g); }
+.dot.red    { background:var(--red);    box-shadow:var(--glow-r); }
+.dot.yellow { background:var(--yellow); box-shadow: 0 0 8px rgba(255,215,64,.5); }
+.dot.pulse.green { animation: pulseG 1.5s infinite; }
+@keyframes pulseG {
+  0%,100%{ box-shadow: 0 0 6px rgba(0,230,118,.4); }
+  50%    { box-shadow: 0 0 16px rgba(0,230,118,.9); }
+}
+
+/* ACTION GRID */
+.action-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px; }
+
+.action-btn {
+  padding: 18px 12px; border-radius:16px;
+  border: 2px solid var(--border);
+  background: var(--bg3);
+  cursor: pointer; text-align:center;
+  transition: all var(--transition);
+  user-select:none;
+}
+.action-btn:active { transform:scale(.96); }
+.action-btn .ab-dot {
+  width:18px; height:18px; border-radius:50%;
+  background: var(--border); margin: 0 auto 10px;
+  transition: all var(--transition);
+}
+.action-btn .ab-label { font-size:15px; font-weight:700; }
+
+.action-btn.sel-in  { border-color:var(--green); background:var(--green2); }
+.action-btn.sel-out { border-color:var(--red);   background:var(--red2); }
+.action-btn.sel-in  .ab-dot { background:var(--green); box-shadow:var(--glow-g); }
+.action-btn.sel-out .ab-dot { background:var(--red);   box-shadow:var(--glow-r); }
+.action-btn.sel-in  .ab-label { color:var(--green); }
+.action-btn.sel-out .ab-label { color:var(--red); }
+
+/* INPUT */
+.input-group { margin-bottom:14px; }
+.input-label { font-size:12px; font-weight:600; color:var(--text2); letter-spacing:.5px; text-transform:uppercase; display:block; margin-bottom:6px; }
+
+.input-field {
+  width:100%; padding:13px 15px;
+  border-radius:12px;
+  border: 1.5px solid var(--border);
+  background: var(--bg3);
+  color: var(--text);
+  font-size:16px; font-weight:600; letter-spacing:1px;
+  transition: border-color var(--transition), box-shadow var(--transition);
+  -webkit-appearance:none;
+}
+.input-field:focus { outline:none; border-color:var(--blue); box-shadow:var(--glow-b); }
+.input-field::placeholder { color:var(--text3); font-weight:400; letter-spacing:0; }
+
+/* SUBMIT BUTTON */
+.submit-btn {
+  width:100%; padding:16px;
+  border-radius:14px; border:none;
+  font-size:16px; font-weight:700;
+  cursor:pointer; color:#fff;
+  transition: all var(--transition);
+  display:flex; align-items:center; justify-content:center; gap:8px;
+  position:relative; overflow:hidden;
+}
+.submit-btn::after {
+  content:''; position:absolute; inset:0;
+  background:rgba(255,255,255,0);
+  transition: background .15s;
+}
+.submit-btn:hover::after { background:rgba(255,255,255,0.08); }
+.submit-btn:active::after { background:rgba(0,0,0,0.12); }
+.submit-btn:active { transform:scale(.98); }
+.submit-btn:disabled { opacity:.45; cursor:not-allowed; transform:none; }
+.submit-btn.btn-in  { background:var(--grad-in); }
+.submit-btn.btn-out { background:var(--grad-out); }
+.submit-btn.btn-neu { background:var(--bg3); border:1px solid var(--border); color:var(--text); }
+
+/* SPINNER */
+.spinner {
+  display:inline-block; width:17px; height:17px;
+  border:2px solid rgba(255,255,255,.25);
+  border-top-color:#fff;
+  border-radius:50%;
+  animation:spin .7s linear infinite;
+}
+.btn-neu .spinner { border-top-color:var(--text); }
+@keyframes spin { to{ transform:rotate(360deg) } }
+
+/* DISTANCE NOTE */
+.dist-note { text-align:center; font-size:13px; color:var(--text2); margin-top:10px; min-height:20px; }
+.dist-note strong { color:var(--text); }
+
+/* ERROR BOX */
+.err-box {
+  background:var(--red2); border:1px solid var(--red);
+  border-radius:12px; padding:12px 14px;
+  font-size:13px; color:var(--text);
+  margin-bottom:14px;
+  display:none;
+  animation: fadeUp .2s ease;
+}
+.err-box.show { display:block; }
+
+/* TOAST */
+.toast {
+  position:fixed; top:16px; left:50%;
+  transform:translateX(-50%) translateY(-100px);
+  background:var(--card);
   border:1px solid var(--border);
-  border-radius:26px;
-  width:100%;max-width:420px;
-  padding:36px 28px;
-  box-shadow:var(--shadow);
-  position:relative;overflow:hidden;
-  flex-shrink:0;
-}
-.card::before{
-  content:'';position:absolute;top:0;left:0;right:0;height:3px;
-  background:linear-gradient(90deg,var(--accent),var(--accent2));
-}
-
-/* ============================================================
-   HOME PAGE
-============================================================ */
-#page-home .logo-wrap{text-align:center;margin-bottom:36px}
-#page-home .logo-box{
-  width:80px;height:80px;margin:0 auto 14px;
-  background:linear-gradient(135deg,var(--accent),var(--accent2));
-  border-radius:24px;
-  display:flex;align-items:center;justify-content:center;
-  font-size:36px;
-  box-shadow:0 0 40px rgba(0,229,184,.25);
-}
-.logo-title{font-family:'Kanit',sans-serif;font-size:26px;font-weight:800;letter-spacing:3px}
-.logo-sub{font-size:13px;color:var(--text-dim);margin-top:5px}
-
-.home-clock{
+  border-radius:14px;
+  padding:12px 20px;
+  min-width:260px; max-width:340px;
   text-align:center;
-  font-family:'Kanit',sans-serif;font-size:42px;font-weight:700;
-  letter-spacing:3px;margin-bottom:4px;
-  background:linear-gradient(90deg,var(--accent),var(--accent2));
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  box-shadow:var(--shadow);
+  z-index:999;
+  transition:transform .3s cubic-bezier(.34,1.56,.64,1);
 }
-.home-date{text-align:center;font-size:14px;color:var(--text-dim);margin-bottom:32px}
+.toast.show { transform:translateX(-50%) translateY(0); }
+.toast.t-ok  { border-top:3px solid var(--green); }
+.toast.t-err { border-top:3px solid var(--red); }
+.toast .t-icon { font-size:22px; margin-bottom:4px; }
+.toast .t-msg  { font-size:14px; }
 
-.home-btns{display:grid;gap:14px}
-.home-btn{
-  display:flex;align-items:center;gap:16px;
-  padding:20px 22px;
-  border-radius:16px;border:1.5px solid var(--border);
-  background:var(--surface2);
-  cursor:pointer;transition:all .2s;
-  text-align:left;color:var(--text);
-  font-family:'Sarabun',sans-serif;
-  width:100%;
+/* HOME */
+.home-hero {
+  text-align:center; padding:28px 0 20px;
 }
-.home-btn:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,229,184,.12)}
-.home-btn .btn-icon{
-  width:48px;height:48px;border-radius:14px;
-  display:flex;align-items:center;justify-content:center;
-  font-size:22px;flex-shrink:0;
-}
-.home-btn.btn-checkin .btn-icon{background:rgba(0,229,184,.12);border:1px solid rgba(0,229,184,.25)}
-.home-btn.btn-report  .btn-icon{background:rgba(41,121,255,.12);border:1px solid rgba(41,121,255,.25)}
-.home-btn .btn-text-wrap .btn-label{font-family:'Kanit',sans-serif;font-size:17px;font-weight:700}
-.home-btn .btn-text-wrap .btn-desc{font-size:12px;color:var(--text-dim);margin-top:2px}
-.home-btn .btn-arrow{margin-left:auto;color:var(--text-dim);font-size:18px}
+.home-hero .h-logo { font-size:60px; margin-bottom:6px; }
+.home-hero .h-title { font-size:26px; font-weight:800; letter-spacing:-.5px; }
+.home-hero .h-sub { font-size:14px; color:var(--text2); margin-top:4px; }
 
-/* ============================================================
-   CHECKIN PAGE
-============================================================ */
-.back-btn{
-  display:flex;align-items:center;gap:8px;
-  color:var(--text-dim);font-size:14px;
-  cursor:pointer;margin-bottom:20px;
-  background:none;border:none;font-family:'Sarabun',sans-serif;
-  padding:0;
+.menu-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px; }
+.menu-card {
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:18px;
+  padding:22px 16px;
+  text-align:center;
+  cursor:pointer;
+  transition: all var(--transition);
+  box-shadow:var(--shadow2);
 }
-.back-btn:hover{color:var(--text)}
+.menu-card:hover { border-color:var(--blue); transform:translateY(-2px); box-shadow:var(--shadow); }
+.menu-card:active { transform:scale(.97); }
+.menu-card .m-icon  { font-size:36px; margin-bottom:8px; }
+.menu-card .m-title { font-size:15px; font-weight:700; }
+.menu-card .m-sub   { font-size:12px; color:var(--text2); margin-top:3px; }
+.menu-card.c-green  { border-color:var(--green); }
+.menu-card.c-blue   { border-color:var(--blue); }
 
-.page-title{
-  font-family:'Kanit',sans-serif;font-size:20px;font-weight:700;
-  margin-bottom:20px;display:flex;align-items:center;gap:10px;
+/* BACK BTN */
+.back-btn {
+  background:none; border:none; color:var(--blue);
+  font-size:14px; font-weight:600; cursor:pointer;
+  padding:6px 0; margin-bottom:14px;
+  display:flex; align-items:center; gap:4px;
+  transition:opacity .2s;
+}
+.back-btn:hover { opacity:.7; }
+
+/* PAGE TITLE */
+.page-title { font-size:22px; font-weight:800; margin-bottom:18px; display:flex; align-items:center; gap:8px; }
+
+/* RESULT */
+.result-card {
+  background:var(--card); border:1px solid var(--border);
+  border-radius:20px; padding:28px 20px;
+  text-align:center; box-shadow:var(--shadow);
+}
+.result-card .r-icon  { font-size:56px; margin-bottom:12px; }
+.result-card .r-title { font-size:22px; font-weight:800; margin-bottom:12px; }
+.result-card .r-rows  { text-align:left; display:inline-block; }
+.r-row { display:flex; align-items:center; gap:10px; padding:7px 0; border-bottom:1px solid var(--border2); font-size:15px; }
+.r-row:last-child { border-bottom:none; }
+.r-row .r-key { color:var(--text2); font-size:13px; width:90px; flex-shrink:0; }
+.r-row .r-val { font-weight:600; }
+.r-badge {
+  display:inline-block; padding:3px 12px; border-radius:20px;
+  font-size:12px; font-weight:700;
+}
+.r-badge.in  { background:var(--green2); color:var(--green); }
+.r-badge.out { background:var(--red2);   color:var(--red); }
+.r-badge.ot  { background:rgba(255,215,64,.15); color:var(--yellow); }
+
+/* ADMIN */
+.date-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px; }
+.btn-row  { display:flex; gap:8px; flex-wrap:wrap; }
+.sm-btn {
+  padding:9px 16px; border-radius:10px;
+  border:1px solid var(--border);
+  background:var(--bg3); color:var(--text);
+  font-size:13px; font-weight:600; cursor:pointer;
+  transition:all var(--transition); white-space:nowrap;
+}
+.sm-btn:hover { border-color:var(--blue); }
+.sm-btn.primary { background:var(--blue); border-color:var(--blue); color:#fff; }
+.sm-btn.primary:hover { opacity:.88; }
+.sm-btn:disabled { opacity:.4; cursor:not-allowed; }
+
+.table-wrap { overflow-x:auto; }
+table { width:100%; border-collapse:collapse; font-size:13px; }
+thead tr { background:var(--bg3); }
+th { padding:10px 10px; text-align:left; font-size:12px; font-weight:700; letter-spacing:.5px; text-transform:uppercase; color:var(--text2); border-bottom:1px solid var(--border); white-space:nowrap; }
+td { padding:10px 10px; border-bottom:1px solid var(--border2); color:var(--text); }
+tr:last-child td { border-bottom:none; }
+
+.tag {
+  display:inline-block; padding:3px 10px; border-radius:20px;
+  font-size:12px; font-weight:700;
+}
+.tag.in  { background:var(--green2); color:var(--green); }
+.tag.out { background:var(--red2);   color:var(--red); }
+
+/* LOADING PLACEHOLDER */
+.loading-ph {
+  text-align:center; padding:30px;
+  color:var(--text2); font-size:14px;
 }
 
-/* GPS Bar */
-.gps-bar{
-  display:flex;align-items:center;gap:10px;
-  background:var(--surface2);border:1px solid var(--border);
-  border-radius:12px;padding:11px 15px;margin-bottom:20px;font-size:13px;
-  transition:all .3s;
-}
-.gps-dot{width:9px;height:9px;border-radius:50%;background:var(--text-dim);flex-shrink:0;transition:all .3s}
-.gps-dot.loading{background:#fbbf24;animation:pulse 1s infinite}
-.gps-dot.ok{background:var(--accent);box-shadow:0 0 8px var(--accent)}
-.gps-dot.error{background:var(--warn)}
-.gps-text{flex:1;color:var(--text-dim)}
-.gps-text.ok{color:var(--accent)}
-.gps-text.error{color:var(--warn)}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
-
-/* Toggle */
-.toggle-wrap{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:20px}
-.toggle-btn{
-  padding:13px 10px;border-radius:12px;
-  border:2px solid var(--border);background:transparent;
-  color:var(--text-dim);
-  font-family:'Kanit',sans-serif;font-size:14px;font-weight:700;
-  cursor:pointer;transition:all .2s;
-  display:flex;flex-direction:column;align-items:center;gap:4px;
-}
-.toggle-btn .t-icon{font-size:20px}
-.toggle-btn:hover{border-color:var(--text-dim);color:var(--text)}
-.toggle-btn.active-ci{border-color:var(--checkin);background:rgba(0,229,184,.08);color:var(--checkin);box-shadow:0 0 20px rgba(0,229,184,.12)}
-.toggle-btn.active-co{border-color:var(--checkout);background:rgba(255,107,53,.08);color:var(--checkout);box-shadow:0 0 20px rgba(255,107,53,.12)}
-
-/* Input */
-.inp-group{margin-bottom:18px}
-.inp-label{display:block;font-size:12px;color:var(--text-dim);font-weight:700;letter-spacing:.5px;margin-bottom:7px;text-transform:uppercase}
-.inp{
-  width:100%;background:var(--surface2);border:1.5px solid var(--border);
-  border-radius:12px;padding:13px 15px;color:var(--text);
-  font-family:'Kanit',sans-serif;font-size:17px;font-weight:700;
-  letter-spacing:2px;text-transform:uppercase;outline:none;
-  -webkit-appearance:none;transition:border-color .2s;
-}
-.inp:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,229,184,.12)}
-.inp::placeholder{color:var(--text-dim);font-size:13px;letter-spacing:0;font-weight:400}
-
-/* Employee preview */
-.emp-preview{
-  display:none;flex-direction:column;gap:4px;
-  background:rgba(0,229,184,.07);border:1px solid rgba(0,229,184,.2);
-  border-radius:10px;padding:11px 14px;margin-top:8px;
-}
-.emp-preview.show{display:flex}
-.emp-row{display:flex;align-items:center;gap:8px}
-.emp-name{font-weight:700;font-size:15px;color:var(--accent)}
-.emp-id-tag{font-size:11px;background:rgba(41,121,255,.15);color:var(--accent2);border:1px solid rgba(41,121,255,.3);border-radius:6px;padding:2px 8px;font-weight:700;font-family:monospace;letter-spacing:1px}
-.emp-pos{font-size:12px;color:var(--text-dim);display:flex;align-items:center;gap:6px}
-.emp-level{font-size:11px;background:rgba(255,179,0,.12);color:var(--ot);border:1px solid rgba(255,179,0,.25);border-radius:6px;padding:2px 8px;font-weight:700}
-
-/* Submit */
-.btn-submit{
-  width:100%;padding:15px;border-radius:14px;border:none;
-  font-family:'Kanit',sans-serif;font-size:16px;font-weight:700;
-  cursor:pointer;transition:all .2s;
-  display:flex;align-items:center;justify-content:center;gap:8px;
-  margin-top:6px;
-}
-.btn-submit.ci-btn{background:linear-gradient(135deg,#00e5b8,#00b894);color:#fff;box-shadow:0 4px 20px rgba(0,229,184,.35)}
-.btn-submit.co-btn{background:linear-gradient(135deg,#ff6b35,#e64a19);color:#fff;box-shadow:0 4px 20px rgba(255,107,53,.35)}
-.btn-submit:hover:not(:disabled){transform:translateY(-1px);filter:brightness(1.08)}
-.btn-submit:disabled{opacity:.35;cursor:not-allowed;transform:none}
-.spinner{width:17px;height:17px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;display:none}
-@keyframes spin{to{transform:rotate(360deg)}}
-
-.dist-badge{display:none;font-size:12px;color:var(--text-dim);text-align:center;margin-top:10px}
-.dist-badge.show{display:block}
-.dist-val{color:var(--accent);font-weight:700}
-
-/* ============================================================
-   LOGIN PAGE
-============================================================ */
-#page-login .lock-icon{
-  width:72px;height:72px;margin:0 auto 18px;
-  background:linear-gradient(135deg,rgba(41,121,255,.2),rgba(0,229,184,.2));
-  border:1px solid rgba(41,121,255,.3);
-  border-radius:22px;display:flex;align-items:center;justify-content:center;font-size:30px;
-}
-#page-login .login-title{font-family:'Kanit',sans-serif;font-size:20px;font-weight:700;text-align:center;margin-bottom:4px}
-#page-login .login-sub{font-size:13px;color:var(--text-dim);text-align:center;margin-bottom:28px}
-.login-error{
-  display:none;background:rgba(255,79,79,.1);border:1px solid rgba(255,79,79,.3);
-  border-radius:10px;padding:10px 14px;font-size:13px;color:var(--warn);margin-bottom:14px;text-align:center;
-}
-.login-error.show{display:block}
-.btn-login{
-  width:100%;padding:15px;border-radius:14px;border:none;
-  background:linear-gradient(135deg,var(--accent2),#1565c0);
-  color:#fff;font-family:'Kanit',sans-serif;font-size:16px;font-weight:700;
-  cursor:pointer;transition:all .2s;margin-top:4px;
-}
-.btn-login:hover{filter:brightness(1.1);transform:translateY(-1px)}
-
-/* ============================================================
-   REPORT PAGE
-============================================================ */
-#page-report{
-  justify-content:flex-start;
-  padding:0;overflow:hidden;
-}
-.report-inner{width:100%;height:100%;display:flex;flex-direction:column;overflow:hidden}
-
-.report-header{
-  background:var(--surface);border-bottom:1px solid var(--border);
-  padding:16px 20px;display:flex;align-items:center;gap:12px;flex-shrink:0;
-}
-.report-header .rh-icon{
-  width:38px;height:38px;background:linear-gradient(135deg,var(--accent),var(--accent2));
-  border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;
-}
-.rh-title{font-family:'Kanit',sans-serif;font-size:16px;font-weight:700}
-.rh-sub{font-size:12px;color:var(--text-dim)}
-.btn-logout{
-  margin-left:auto;background:none;border:1px solid var(--border);
-  color:var(--text-dim);border-radius:8px;padding:6px 12px;
-  font-size:12px;cursor:pointer;font-family:'Sarabun',sans-serif;
-  transition:all .2s;white-space:nowrap;
-}
-.btn-logout:hover{border-color:var(--warn);color:var(--warn)}
-
-/* Filter */
-.report-filter{
-  background:var(--surface);border-bottom:1px solid var(--border);
-  padding:14px 16px;flex-shrink:0;
-  display:grid;grid-template-columns:1fr 1fr;gap:10px;
-}
-.rf-group label{display:block;font-size:11px;color:var(--text-dim);font-weight:700;letter-spacing:.4px;margin-bottom:5px;text-transform:uppercase}
-.rf-sel,.rf-inp{
-  width:100%;background:var(--surface2);border:1.5px solid var(--border);
-  border-radius:9px;padding:8px 11px;color:var(--text);
-  font-family:'Sarabun',sans-serif;font-size:13px;outline:none;
-  -webkit-appearance:none;transition:border-color .2s;
-}
-.rf-sel:focus,.rf-inp:focus{border-color:var(--accent)}
-.rf-sel option{background:var(--surface2)}
-.rf-actions{grid-column:span 2;display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.btn-search{
-  background:linear-gradient(135deg,var(--accent),#00b894);color:#000;
-  border:none;border-radius:9px;padding:9px;
-  font-family:'Kanit',sans-serif;font-size:13px;font-weight:700;
-  cursor:pointer;transition:all .2s;
-}
-.btn-search:hover{filter:brightness(1.05)}
-.btn-export{
-  background:transparent;color:var(--accent2);
-  border:1.5px solid var(--accent2);border-radius:9px;padding:9px;
-  font-family:'Kanit',sans-serif;font-size:13px;font-weight:600;
-  cursor:pointer;transition:all .2s;
-}
-.btn-export:hover{background:rgba(41,121,255,.1)}
-
-/* Stats */
-.report-stats{
-  display:grid;grid-template-columns:repeat(4,1fr);gap:0;
-  border-bottom:1px solid var(--border);flex-shrink:0;
-}
-.stat-box{
-  padding:12px 10px;text-align:center;
-  border-right:1px solid var(--border);
-}
-.stat-box:last-child{border-right:none}
-.stat-label{font-size:10px;color:var(--text-dim);font-weight:700;text-transform:uppercase;letter-spacing:.4px}
-.stat-val{font-family:'Kanit',sans-serif;font-size:20px;font-weight:800;margin-top:3px}
-.stat-box.s1 .stat-val{color:var(--accent2)}
-.stat-box.s2 .stat-val{color:var(--accent)}
-.stat-box.s3 .stat-val{color:var(--ot)}
-.stat-box.s4 .stat-val{color:var(--accent);font-size:15px}
-
-/* Table */
-.report-table-wrap{flex:1;overflow-y:auto;overflow-x:auto}
-.report-table-wrap::-webkit-scrollbar{width:4px;height:4px}
-.report-table-wrap::-webkit-scrollbar-track{background:transparent}
-.report-table-wrap::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
-
-table{width:100%;border-collapse:collapse;font-size:13px;min-width:700px}
-thead th{
-  background:var(--surface2);padding:10px 12px;
-  text-align:left;font-weight:700;font-size:11px;
-  text-transform:uppercase;letter-spacing:.4px;color:var(--text-dim);
-  white-space:nowrap;position:sticky;top:0;z-index:10;
-}
-tbody tr{border-top:1px solid var(--border);transition:background .15s}
-tbody tr:hover{background:var(--surface2)}
-td{padding:11px 12px;vertical-align:middle;white-space:nowrap}
-
-.bdg{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:700;font-family:'Kanit',sans-serif}
-.bdg-in{background:rgba(0,229,184,.12);color:var(--accent);border:1px solid rgba(0,229,184,.25)}
-.bdg-out{background:rgba(255,107,53,.12);color:#ff6b35;border:1px solid rgba(255,107,53,.25)}
-.bdg-ot{background:rgba(255,179,0,.12);color:var(--ot);border:1px solid rgba(255,179,0,.25)}
-.bdg-none{background:rgba(90,110,138,.1);color:var(--text-dim);font-size:10px}
-.bdg-level{background:rgba(255,179,0,.1);color:var(--ot);border:1px solid rgba(255,179,0,.2)}
-.emp-code{font-family:monospace;font-weight:700;color:var(--accent2);font-size:12px}
-
-/* Empty/Loading */
-.tbl-state{text-align:center;padding:50px 20px;color:var(--text-dim)}
-.tbl-icon{font-size:40px;margin-bottom:10px}
-.tbl-msg{font-size:14px}
-.tbl-spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 12px}
-
-/* ============================================================
-   TOAST
-============================================================ */
-.toast{
-  position:fixed;top:18px;left:50%;
-  transform:translateX(-50%) translateY(-90px);
-  background:var(--surface);border:1px solid var(--border);
-  border-radius:14px;padding:14px 22px;max-width:370px;width:calc(100% - 36px);
-  box-shadow:0 16px 48px rgba(0,0,0,.55);
-  transition:transform .35s cubic-bezier(.34,1.56,.64,1);
-  z-index:9999;text-align:center;
-}
-.toast.show{transform:translateX(-50%) translateY(0)}
-.toast.success{border-top:3px solid var(--accent)}
-.toast.error{border-top:3px solid var(--warn)}
-.toast.warning{border-top:3px solid var(--ot)}
-.t-icon{font-size:26px;margin-bottom:6px}
-.t-title{font-family:'Kanit',sans-serif;font-size:15px;font-weight:700;margin-bottom:3px}
-.t-msg{font-size:13px;color:var(--text-dim);white-space:pre-line;line-height:1.6}
-
-/* GPS Overlay */
-.gps-overlay{
-  display:none;position:fixed;inset:0;
-  background:rgba(7,12,24,.97);z-index:9998;
-  flex-direction:column;align-items:center;justify-content:center;
-  text-align:center;padding:40px;
-}
-.gps-overlay.show{display:flex}
-.gps-overlay .ov-icon{font-size:60px;margin-bottom:18px}
-.gps-overlay .ov-title{font-family:'Kanit',sans-serif;font-size:20px;font-weight:700;color:var(--warn);margin-bottom:10px}
-.gps-overlay .ov-desc{font-size:14px;color:var(--text-dim);line-height:1.8;margin-bottom:26px}
-.btn-retry{background:var(--warn);color:#fff;border:none;padding:13px 30px;border-radius:12px;font-family:'Kanit',sans-serif;font-size:15px;font-weight:700;cursor:pointer}
-
-@media(max-width:480px){
-  .card{padding:28px 20px}
-  .report-stats{grid-template-columns:repeat(2,1fr)}
-  .stat-box:nth-child(2){border-right:none}
-  .stat-box:nth-child(3){border-right:1px solid var(--border)}
-  .stat-box:nth-child(3),.stat-box:nth-child(4){border-top:1px solid var(--border)}
+/* RESPONSIVE */
+@media(max-width:400px){
+  .page { padding:14px; }
+  .menu-grid { grid-template-columns:1fr; }
 }
 </style>
 </head>
 <body>
 
-<!-- ============================================================
-     GPS OVERLAY
-============================================================ -->
-<div class="gps-overlay" id="gpsOverlay">
-  <div class="ov-icon">📍</div>
-  <div class="ov-title">ต้องเปิดการเข้าถึงตำแหน่ง</div>
-  <div class="ov-desc">ระบบต้องการ GPS เพื่อยืนยันตำแหน่ง<br>ก่อนเช็คชื่อเข้า-ออกงาน<br><br>กรุณาอนุญาต แล้วลองใหม่</div>
-  <button class="btn-retry" onclick="initGPS()">🔄 ลองอีกครั้ง</button>
+<!-- ===== HEADER ===== -->
+<div class="header">
+  <div class="header-left">
+    <div class="header-logo">🏭</div>
+    <div class="header-text">
+      <div class="title">MKD2 Wangnoi</div>
+      <div class="sub">Makro Distribution Center</div>
+    </div>
+  </div>
+  <button class="theme-btn" onclick="toggleTheme()" id="themeBtn">
+    <span class="icon">🌙</span>
+    <span id="themeTxt">มืด</span>
+  </button>
 </div>
 
-<!-- ============================================================
-     TOAST
-============================================================ -->
+<!-- ===== TOAST ===== -->
 <div class="toast" id="toast">
   <div class="t-icon" id="tIcon"></div>
-  <div class="t-title" id="tTitle"></div>
-  <div class="t-msg" id="tMsg"></div>
+  <div class="t-msg"  id="tMsg"></div>
 </div>
 
-<!-- ============================================================
+<!-- ======================================================
      PAGE: HOME
-============================================================ -->
-<div class="page active" id="page-home">
-  <div class="card">
-    <div class="logo-wrap">
-      <div class="logo-box">🏢</div>
-      <div class="logo-title">MKD2</div>
-      <div class="logo-sub">Attendance System</div>
+     ====================================================== -->
+<div class="page active" id="pgHome">
+  <div class="home-hero">
+    <div class="h-logo">🏭</div>
+    <div class="h-title">MKD2 Wangnoi</div>
+    <div class="h-sub">ระบบลงเวลาเข้า-ออกงาน</div>
+  </div>
+
+  <div class="menu-grid">
+    <div class="menu-card c-green" onclick="showPage('pgCheckin')">
+      <div class="m-icon">🕐</div>
+      <div class="m-title">ลงเวลางาน</div>
+      <div class="m-sub">เข้างาน / ออกงาน</div>
     </div>
-    <div class="home-clock" id="homeClock">--:--</div>
-    <div class="home-date" id="homeDate">---</div>
-    <div class="home-btns">
-      <button class="home-btn btn-checkin" onclick="goTo('checkin')">
-        <div class="btn-icon">⏱️</div>
-        <div class="btn-text-wrap">
-          <div class="btn-label">ลงเวลาเข้า-ออกงาน</div>
-          <div class="btn-desc">เช็คชื่อด้วย GPS</div>
-        </div>
-        <span class="btn-arrow">›</span>
-      </button>
-      <button class="home-btn btn-report" onclick="goTo('login')">
-        <div class="btn-icon">📊</div>
-        <div class="btn-text-wrap">
-          <div class="btn-label">รายงานการเข้างาน</div>
-          <div class="btn-desc">สำหรับผู้ดูแลระบบ</div>
-        </div>
-        <span class="btn-arrow">›</span>
-      </button>
+    <div class="menu-card c-blue" onclick="showPage('pgAdmin')">
+      <div class="m-icon">📊</div>
+      <div class="m-title">รายงาน</div>
+      <div class="m-sub">ข้อมูลการเข้างาน</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">⚙️ สถานะระบบ</div>
+    <div class="status-bar" id="svrBar">
+      <div class="dot yellow" id="svrDot"></div>
+      <span id="svrTxt">กำลังตรวจสอบ...</span>
     </div>
   </div>
 </div>
 
-<!-- ============================================================
+<!-- ======================================================
      PAGE: CHECKIN
-============================================================ -->
-<div class="page" id="page-checkin">
-  <div class="card">
-    <button class="back-btn" onclick="goTo('home')">‹ กลับหน้าหลัก</button>
-    <div class="page-title">⏱️ ลงเวลาเข้า-ออกงาน</div>
+     ====================================================== -->
+<div class="page" id="pgCheckin">
+  <button class="back-btn" onclick="showPage('pgHome')">← กลับหน้าหลัก</button>
+  <div class="page-title">🕐 ลงเวลาเข้า-ออกงาน</div>
 
-    <div class="gps-bar" id="gpsBar">
-      <div class="gps-dot loading" id="gpsDot"></div>
-      <div class="gps-text" id="gpsText">กำลังตรวจสอบตำแหน่ง...</div>
+  <!-- GPS -->
+  <div class="status-bar" id="gpsBar" style="margin-bottom:14px;">
+    <div class="dot yellow pulse" id="gpsDot"></div>
+    <span id="gpsTxt">กำลังระบุตำแหน่ง...</span>
+  </div>
+
+  <!-- Error -->
+  <div class="err-box" id="errBox"></div>
+
+  <!-- Action -->
+  <div class="action-grid">
+    <div class="action-btn sel-in" id="aIn" onclick="selAction('in')">
+      <div class="ab-dot"></div>
+      <div class="ab-label">เข้างาน</div>
     </div>
-
-    <div class="toggle-wrap">
-      <button class="toggle-btn active-ci" id="btnCI" onclick="selType('checkin')">
-        <span class="t-icon">🟢</span>เข้างาน
-      </button>
-      <button class="toggle-btn" id="btnCO" onclick="selType('checkout')">
-        <span class="t-icon">🔴</span>ออกงาน
-      </button>
+    <div class="action-btn" id="aOut" onclick="selAction('out')">
+      <div class="ab-dot"></div>
+      <div class="ab-label">ออกงาน</div>
     </div>
+  </div>
 
-    <div class="inp-group">
-      <label class="inp-label">รหัสพนักงาน</label>
-      <input class="inp" type="text" id="empInp" placeholder="กรอกรหัสพนักงาน"
-        maxlength="20" autocomplete="off" autocorrect="off" spellcheck="false"
-        oninput="onEmpInput()">
-      <div class="emp-preview" id="empPreview">
-        <div class="emp-row">
-          <span>👤</span>
-          <span class="emp-name" id="empName"></span>
-          <span class="emp-id-tag" id="empIdTag"></span>
+  <!-- EMP ID -->
+  <div class="input-group">
+    <label class="input-label">รหัสพนักงาน</label>
+    <input type="text" class="input-field" id="empId"
+           placeholder="เช่น TH061378" maxlength="20"
+           oninput="this.value=this.value.toUpperCase()">
+  </div>
+
+  <!-- Submit -->
+  <button class="submit-btn btn-in" id="subBtn" onclick="doSubmit()">
+    ✅ บันทึกเข้างาน
+  </button>
+
+  <div class="dist-note" id="distNote"></div>
+</div>
+
+<!-- ======================================================
+     PAGE: RESULT
+     ====================================================== -->
+<div class="page" id="pgResult">
+  <button class="back-btn" onclick="showPage('pgCheckin')">← ลงเวลาอีกครั้ง</button>
+  <div class="result-card" id="rCard"></div>
+  <button class="submit-btn btn-neu" style="margin-top:14px;" onclick="showPage('pgHome')">
+    🏠 กลับหน้าหลัก
+  </button>
+</div>
+
+<!-- ======================================================
+     PAGE: ADMIN
+     ====================================================== -->
+<div class="page" id="pgAdmin">
+  <button class="back-btn" onclick="showPage('pgHome')">← กลับหน้าหลัก</button>
+  <div class="page-title">📊 รายงานการเข้างาน</div>
+
+  <!-- Login -->
+  <div class="card" id="admLogin">
+    <div style="text-align:center;margin-bottom:18px;">
+      <div style="font-size:40px;">🔐</div>
+      <div style="font-weight:700;margin-top:8px;font-size:17px;">ยืนยันตัวตนผู้ดูแล</div>
+    </div>
+    <div class="input-group">
+      <label class="input-label">รหัสผ่าน</label>
+      <input type="password" class="input-field" id="admPass" placeholder="••••••"
+             onkeydown="if(event.key==='Enter')doAdmLogin()">
+    </div>
+    <button class="submit-btn btn-in" onclick="doAdmLogin()">เข้าสู่ระบบ</button>
+  </div>
+
+  <!-- Panel -->
+  <div id="admPanel" style="display:none;">
+    <div class="card">
+      <div class="card-title">📅 เลือกช่วงเวลา</div>
+      <div class="date-row">
+        <div>
+          <label class="input-label">วันที่เริ่ม</label>
+          <input type="date" class="input-field" id="dFrom" style="font-size:14px;padding:11px 12px;">
         </div>
-        <div class="emp-pos">
-          <span id="empPos"></span>
-          <span class="emp-level" id="empLvl"></span>
+        <div>
+          <label class="input-label">วันที่สิ้นสุด</label>
+          <input type="date" class="input-field" id="dTo" style="font-size:14px;padding:11px 12px;">
         </div>
       </div>
+      <div class="btn-row">
+        <button class="sm-btn" onclick="qToday()">วันนี้</button>
+        <button class="sm-btn" onclick="qWeek()">สัปดาห์นี้</button>
+        <button class="sm-btn" onclick="qMonth()">เดือนนี้</button>
+        <button class="sm-btn primary" onclick="doReport()" id="rptBtn">🔍 โหลด</button>
+      </div>
     </div>
-
-    <button class="btn-submit ci-btn" id="btnSubmit" onclick="submitAtt()" disabled>
-      <div class="spinner" id="spinner"></div>
-      <span id="btnLbl">✅ บันทึกเข้างาน</span>
-    </button>
-
-    <div class="dist-badge" id="distBadge">
-      ห่างจากสำนักงาน <span class="dist-val" id="distVal">--</span> เมตร
-    </div>
+    <div id="rptOut"></div>
   </div>
 </div>
 
-<!-- ============================================================
-     PAGE: LOGIN
-============================================================ -->
-<div class="page" id="page-login">
-  <div class="card">
-    <button class="back-btn" onclick="goTo('home')">‹ กลับหน้าหลัก</button>
-    <div class="lock-icon">🔐</div>
-    <div class="login-title">Admin Login</div>
-    <div class="login-sub">เข้าสู่ระบบเพื่อดูรายงาน</div>
-    <div class="login-error" id="loginErr">รหัสผ่านไม่ถูกต้อง</div>
-    <div class="inp-group">
-      <label class="inp-label">รหัสผ่าน</label>
-      <input class="inp" type="password" id="loginPw"
-        placeholder="กรอกรหัสผ่าน Admin"
-        style="letter-spacing:3px;font-size:20px"
-        onkeydown="if(event.key==='Enter')doLogin()">
-    </div>
-    <button class="btn-login" onclick="doLogin()">เข้าสู่ระบบ →</button>
-  </div>
-</div>
-
-<!-- ============================================================
-     PAGE: REPORT
-============================================================ -->
-<div class="page" id="page-report">
-  <div class="report-inner">
-
-    <div class="report-header">
-      <div class="rh-icon">📊</div>
-      <div>
-        <div class="rh-title">รายงานการเข้างาน</div>
-        <div class="rh-sub" id="rhSub">MKD2 Attendance Report</div>
-      </div>
-      <button class="btn-logout" onclick="doLogout()">ออกจากระบบ</button>
-    </div>
-
-    <div class="report-filter">
-      <div class="rf-group">
-        <label>ช่วงเวลา</label>
-        <select class="rf-sel" id="rfType" onchange="onRfTypeChange()">
-          <option value="day">รายวัน</option>
-          <option value="week">รายสัปดาห์ (เลือกวัน)</option>
-          <option value="month" selected>รายเดือน</option>
-          <option value="all">ทั้งหมด</option>
-        </select>
-      </div>
-      <div class="rf-group" id="rfValGroup">
-        <label id="rfValLbl">เดือน</label>
-        <input class="rf-inp" type="month" id="rfVal">
-      </div>
-      <div class="rf-group" id="rfWeekStartGroup" style="display:none">
-        <label>วันเริ่มต้น</label>
-        <input class="rf-inp" type="date" id="rfWeekStart" onchange="onWeekStartChange()">
-      </div>
-      <div class="rf-group" id="rfWeekEndGroup" style="display:none">
-        <label>วันสิ้นสุด</label>
-        <input class="rf-inp" type="date" id="rfWeekEnd">
-      </div>
-      <div class="rf-group">
-        <label>รหัสพนักงาน (ว่าง = ทุกคน)</label>
-        <input class="rf-inp" type="text" id="rfEmp" placeholder="เช่น TH061233" style="text-transform:uppercase">
-      </div>
-      <div class="rf-actions">
-        <button class="btn-search" onclick="loadReport()">🔍 ดูรายงาน</button>
-        <button class="btn-export" onclick="exportCSV()">⬇ Export CSV</button>
-      </div>
-    </div>
-
-    <div class="report-stats" id="reportStats" style="display:none">
-      <div class="stat-box s1"><div class="stat-label">รายการทั้งหมด</div><div class="stat-val" id="stTotal">0</div></div>
-      <div class="stat-box s2"><div class="stat-label">เข้างานครบ</div><div class="stat-val" id="stComplete">0</div></div>
-      <div class="stat-box s3"><div class="stat-label">มี OT</div><div class="stat-val" id="stOT">0</div></div>
-      <div class="stat-box s4"><div class="stat-label">เวลาเฉลี่ย</div><div class="stat-val" id="stAvg">—</div></div>
-    </div>
-
-    <div class="report-table-wrap" id="reportTableWrap">
-      <div class="tbl-state">
-        <div class="tbl-icon">📋</div>
-        <div class="tbl-msg">เลือกช่วงเวลาแล้วกด "ดูรายงาน"</div>
-      </div>
-    </div>
-
-  </div>
-</div>
-
+<!-- ======================================================
+     SCRIPT
+     ====================================================== -->
 <script>
 // ============================================================
-// CONFIG — แก้ค่าเหล่านี้ก่อนใช้งาน
+// ⚙️  CONFIG — วาง URL ของ GAS Web App ตรงนี้
 // ============================================================
-const GAS_URL      = 'https://script.google.com/macros/s/AKfycbxv_PGtkk09qrTtd00QTaGcblUR-25QTptLlonfyZABQUTKMEeVl8RCA8K5nEsnNTyPEA/exec';
-const ADMIN_PW_KEY = 'ADMIN_PASSWORD';   // key สำหรับดึง password จาก GAS
-const OFFICE_LAT   = 14.1788252;
-const OFFICE_LNG   = 100.6490192;
-const MAX_RADIUS   = 100;
+const GAS_URL = 'PASTE_YOUR_GAS_WEBAPP_URL_HERE';
+// วิธีหา URL: GAS → Deploy → Manage deployments → Copy URL
 
-// Admin password — เปลี่ยนได้ตามต้องการ (หรือ verify ผ่าน GAS ก็ได้)
-const ADMIN_PASSWORD = 'mkd2admin';
+const ADMIN_PASS = 'mkd2admin';
 
 // ============================================================
-// PAGE ROUTER
+//  THEME
 // ============================================================
-let currentPage = 'home';
+let theme = localStorage.getItem('mkd2theme') || 'dark';
 
-function goTo(page) {
-  document.getElementById('page-' + currentPage).classList.remove('active');
-  document.getElementById('page-' + page).classList.add('active');
-  currentPage = page;
-
-  if (page === 'checkin') {
-    initGPS();
-  }
-  if (page === 'report') {
-    onRfTypeChange();
-    const now = new Date();
-    document.getElementById('rfVal').value = now.toISOString().slice(0,7);
-    document.getElementById('rhSub').textContent =
-      'เข้าสู่ระบบเมื่อ ' + new Intl.DateTimeFormat('th-TH',{hour:'2-digit',minute:'2-digit'}).format(now);
-  }
+function applyTheme(t) {
+  document.documentElement.setAttribute('data-theme', t);
+  document.getElementById('themeBtn').title = t === 'dark' ? 'เปลี่ยนเป็นธีมสว่าง' : 'เปลี่ยนเป็นธีมมืด';
+  document.getElementById('themeTxt').textContent = t === 'dark' ? 'สว่าง' : 'มืด';
+  localStorage.setItem('mkd2theme', t);
 }
 
-// ============================================================
-// CLOCK
-// ============================================================
-function updateClock() {
-  const now = new Date();
-  const t = new Intl.DateTimeFormat('th-TH',{timeZone:'Asia/Bangkok',hour:'2-digit',minute:'2-digit',hour12:false});
-  const d = new Intl.DateTimeFormat('th-TH',{timeZone:'Asia/Bangkok',weekday:'long',year:'numeric',month:'long',day:'numeric'});
-  document.getElementById('homeClock').textContent = t.format(now);
-  document.getElementById('homeDate').textContent  = d.format(now);
-}
-setInterval(updateClock,1000);
-updateClock();
-
-// ============================================================
-// GPS
-// ============================================================
-let curLat=null, curLng=null, gpsOk=false, inRange=false;
-
-function initGPS() {
-  document.getElementById('gpsOverlay').classList.remove('show');
-  setGpsStatus('loading','กำลังตรวจสอบตำแหน่ง...');
-  if (!navigator.geolocation) { setGpsStatus('error','เบราว์เซอร์ไม่รองรับ GPS'); showOverlay(); return; }
-  navigator.geolocation.getCurrentPosition(onGpsOk, onGpsErr,
-    { enableHighAccuracy:true, timeout:15000, maximumAge:0 });
+function toggleTheme() {
+  theme = theme === 'dark' ? 'light' : 'dark';
+  applyTheme(theme);
 }
 
-function onGpsOk(pos) {
-  curLat = pos.coords.latitude;
-  curLng = pos.coords.longitude;
-  const dist = haversine(curLat,curLng,OFFICE_LAT,OFFICE_LNG);
-  const dr = Math.round(dist);
-  document.getElementById('distBadge').classList.add('show');
-  document.getElementById('distVal').textContent = dr;
-  if (dist <= MAX_RADIUS) {
-    gpsOk=true; inRange=true;
-    setGpsStatus('ok',`✓ ตำแหน่งถูกต้อง (ห่าง ${dr} ม.)`);
-  } else {
-    gpsOk=true; inRange=false;
-    setGpsStatus('error',`⚠ เช็คชื่อไม่ตรงตำแหน่ง (ห่าง ${dr} ม.)`);
-  }
-  updateSubmitBtn();
-  navigator.geolocation.watchPosition(onGpsOk, null, {enableHighAccuracy:true,maximumAge:10000});
-}
-
-function onGpsErr(err) {
-  gpsOk=false; inRange=false;
-  setGpsStatus('error','ไม่สามารถเข้าถึงตำแหน่ง');
-  updateSubmitBtn();
-  if (err.code===1) showOverlay();
-  else showToast('error','❌','GPS Error','ไม่สามารถรับตำแหน่งได้');
-}
-
-function setGpsStatus(s,t) {
-  document.getElementById('gpsDot').className = 'gps-dot ' + s;
-  const el = document.getElementById('gpsText');
-  el.className = 'gps-text ' + (s==='ok'?'ok':s==='error'?'error':'');
-  el.textContent = t;
-}
-
-function showOverlay() { document.getElementById('gpsOverlay').classList.add('show'); }
+applyTheme(theme);
 
 // ============================================================
-// CHECKIN — TYPE SELECT
+//  NAVIGATION
 // ============================================================
-let curType='checkin', verifiedEmp=null, empTimer=null;
-
-function selType(t) {
-  curType=t;
-  const ci=document.getElementById('btnCI'), co=document.getElementById('btnCO');
-  const bs=document.getElementById('btnSubmit'), lbl=document.getElementById('btnLbl');
-  if (t==='checkin') {
-    ci.className='toggle-btn active-ci'; co.className='toggle-btn';
-    bs.className='btn-submit ci-btn'; lbl.textContent='✅ บันทึกเข้างาน';
-  } else {
-    ci.className='toggle-btn'; co.className='toggle-btn active-co';
-    bs.className='btn-submit co-btn'; lbl.textContent='🔴 บันทึกออกงาน';
-  }
-  updateSubmitBtn();
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  if (id === 'pgCheckin') startGPS();
 }
 
 // ============================================================
-// CHECKIN — EMPLOYEE INPUT
+//  TOAST
 // ============================================================
-function onEmpInput() {
-  const v = document.getElementById('empInp').value.trim();
-  verifiedEmp=null;
-  document.getElementById('empPreview').classList.remove('show');
-  updateSubmitBtn();
-  clearTimeout(empTimer);
-  if (v.length>=2) empTimer=setTimeout(()=>verifyEmp(v),600);
-}
-
-async function verifyEmp(id) {
-  try {
-    const r = await gasPost({action:'verify_employee',emp_id:id});
-    if (r.success) {
-      verifiedEmp=r;
-      document.getElementById('empName').textContent  = r.name;
-      document.getElementById('empIdTag').textContent = r.emp_id;
-      document.getElementById('empPos').textContent   = r.position||'';
-      document.getElementById('empLvl').textContent   = r.level||'';
-      document.getElementById('empPreview').classList.add('show');
-    } else {
-      verifiedEmp=null;
-      document.getElementById('empPreview').classList.remove('show');
-    }
-  } catch(e) {}
-  updateSubmitBtn();
-}
-
-function updateSubmitBtn() {
-  const v = document.getElementById('empInp').value.trim();
-  document.getElementById('btnSubmit').disabled = !(gpsOk && v.length>0);
-}
-
-// ============================================================
-// CHECKIN — SUBMIT
-// ============================================================
-async function submitAtt() {
-  const id = document.getElementById('empInp').value.trim();
-  if (!id)    { showToast('error','⚠️','กรุณากรอกรหัสพนักงาน',''); return; }
-  if (!gpsOk) { showToast('error','📍','ไม่พบ GPS','กรุณาเปิด GPS ก่อน'); return; }
-
-  if (!inRange) {
-    const d = Math.round(haversine(curLat,curLng,OFFICE_LAT,OFFICE_LNG));
-    showToast('warning','⚠️','เช็คชื่อไม่ตรงตำแหน่ง',`คุณอยู่ห่างสำนักงาน ${d} เมตร\nต้องอยู่ในรัศมี 50 เมตร`);
-    return;
-  }
-
-  setLoading(true);
-  try {
-    if (!verifiedEmp) {
-      const vr = await gasPost({action:'verify_employee',emp_id:id});
-      if (!vr.success) { showToast('error','❌','ไม่พบรหัสพนักงาน',vr.message); setLoading(false); return; }
-      verifiedEmp=vr;
-    }
-    const res = await gasPost({
-      action:   curType,
-      emp_id:   verifiedEmp.emp_id,
-      name:     verifiedEmp.name,
-      position: verifiedEmp.position||'',
-      level:    verifiedEmp.level||'',
-      lat: curLat, lng: curLng
-    });
-    if (res.success) {
-      showToast('success', curType==='checkin'?'✅':'👋',
-        curType==='checkin'?'เข้างานสำเร็จ!':'ออกงานสำเร็จ!', res.message);
-      document.getElementById('empInp').value='';
-      verifiedEmp=null;
-      document.getElementById('empPreview').classList.remove('show');
-      updateSubmitBtn();
-    } else {
-      showToast('error','❌','เกิดข้อผิดพลาด',res.message);
-    }
-  } catch(e) {
-    showToast('error','❌','เชื่อมต่อไม่ได้','ตรวจสอบอินเทอร์เน็ต\n'+e.message);
-  }
-  setLoading(false);
-}
-
-function setLoading(on) {
-  document.getElementById('btnSubmit').disabled = on;
-  document.getElementById('spinner').style.display = on?'block':'none';
-  document.getElementById('btnLbl').style.display  = on?'none':'inline';
-}
-
-// ============================================================
-// LOGIN
-// ============================================================
-function doLogin() {
-  const pw = document.getElementById('loginPw').value;
-  const err = document.getElementById('loginErr');
-  if (pw === ADMIN_PASSWORD) {
-    sessionStorage.setItem('mkd2_admin','1');
-    err.classList.remove('show');
-    document.getElementById('loginPw').value='';
-    goTo('report');
-  } else {
-    err.classList.add('show');
-    document.getElementById('loginPw').value='';
-    document.getElementById('loginPw').focus();
-  }
-}
-
-function doLogout() {
-  sessionStorage.removeItem('mkd2_admin');
-  goTo('home');
-}
-
-// ============================================================
-// REPORT — FILTER
-// ============================================================
-function onRfTypeChange() {
-  const t = document.getElementById('rfType').value;
-  const g  = document.getElementById('rfValGroup');
-  const wS = document.getElementById('rfWeekStartGroup');
-  const wE = document.getElementById('rfWeekEndGroup');
-  const l  = document.getElementById('rfValLbl');
-  const i  = document.getElementById('rfVal');
-  const today = new Date().toISOString().slice(0,10);
-
-  // hide all first
-  g.style.display='none'; wS.style.display='none'; wE.style.display='none';
-
-  if (t==='all') return;
-
-  if (t==='day') {
-    g.style.display=''; l.textContent='วันที่'; i.type='date'; i.value=today;
-  }
-  if (t==='week') {
-    wS.style.display=''; wE.style.display='';
-    // default: จันทร์-อาทิตย์ของสัปดาห์นี้
-    const mon = getMondayOf(new Date());
-    const sun = new Date(mon); sun.setDate(sun.getDate()+6);
-    document.getElementById('rfWeekStart').value = mon.toISOString().slice(0,10);
-    document.getElementById('rfWeekEnd').value   = sun.toISOString().slice(0,10);
-  }
-  if (t==='month') {
-    g.style.display=''; l.textContent='เดือน'; i.type='month'; i.value=new Date().toISOString().slice(0,7);
-  }
-}
-
-function getMondayOf(d) {
-  const day = d.getDay(); // 0=Sun
-  const diff = (day===0) ? -6 : 1-day;
-  const mon = new Date(d);
-  mon.setDate(d.getDate()+diff);
-  return mon;
-}
-
-function onWeekStartChange() {
-  // อัปเดต end = start + 6 วัน อัตโนมัติ
-  const start = document.getElementById('rfWeekStart').value;
-  if (!start) return;
-  const d = new Date(start);
-  d.setDate(d.getDate()+6);
-  document.getElementById('rfWeekEnd').value = d.toISOString().slice(0,10);
-}
-
-// ============================================================
-// REPORT — LOAD
-// ============================================================
-let reportData=[];
-
-async function loadReport() {
-  if (!sessionStorage.getItem('mkd2_admin')) { goTo('login'); return; }
-  const t = document.getElementById('rfType').value;
-  const e = document.getElementById('rfEmp').value.trim();
-  let v='', v2='';
-
-  if (t==='week') {
-    v  = document.getElementById('rfWeekStart').value;
-    v2 = document.getElementById('rfWeekEnd').value;
-    if (!v||!v2) { showTblError('กรุณาเลือกวันเริ่มต้นและวันสิ้นสุด'); return; }
-  } else {
-    v = document.getElementById('rfVal').value;
-  }
-
-  showTblLoading();
-  try {
-    const res=await gasPost({action:'get_report',filter_type:t,filter_value:v,filter_value2:v2,emp_id:e});
-    if (res.success) {
-      reportData=res.data||[];
-      renderTable(reportData);
-      renderStats(reportData);
-    } else {
-      showTblError(res.message||'เกิดข้อผิดพลาด');
-    }
-  } catch(e) {
-    showTblError('ไม่สามารถเชื่อมต่อได้: '+e.message);
-  }
-}
-
-function renderTable(data) {
-  const wrap=document.getElementById('reportTableWrap');
-  if (!data.length) {
-    wrap.innerHTML=`<div class="tbl-state"><div class="tbl-icon">🔍</div><div class="tbl-msg">ไม่พบข้อมูลในช่วงเวลาที่เลือก</div></div>`;
-    return;
-  }
-  const rows=data.map((r,i)=>{
-    const hasCo=r.checkout&&r.checkout!=='';
-    const hasOT=r.overtime&&r.overtime!=='0:00'&&r.overtime!=='';
-    return `<tr>
-      <td style="color:var(--text-dim);font-size:11px">${i+1}</td>
-      <td><b>${fmtDate(r.date)}</b></td>
-      <td><span class="emp-code">${r.emp_id||'-'}</span></td>
-      <td>${r.name||'-'}</td>
-      <td style="font-size:12px;color:var(--text-dim)">${r.position||'-'}</td>
-      <td>${r.level?`<span class="bdg bdg-level">${r.level}</span>`:'-'}</td>
-      <td>${r.checkin?`<span class="bdg bdg-in">🟢 ${r.checkin}</span>`:`<span class="bdg bdg-none">—</span>`}</td>
-      <td>${hasCo?`<span class="bdg bdg-out">🔴 ${r.checkout}</span>`:`<span class="bdg bdg-none">ยังไม่ออก</span>`}</td>
-      <td><b>${r.work_time||'—'}</b></td>
-      <td>${hasOT?`<span class="bdg bdg-ot">⏰ ${r.overtime}</span>`:`<span style="color:var(--text-dim)">—</span>`}</td>
-    </tr>`;
-  }).join('');
-  wrap.innerHTML=`<table>
-    <thead><tr>
-      <th>#</th><th>วันที่</th><th>รหัส</th><th>ชื่อ</th>
-      <th>ตำแหน่ง</th><th>ระดับ</th>
-      <th>เวลาเข้า</th><th>เวลาออก</th><th>ชม.ทำงาน</th><th>OT</th>
-    </tr></thead>
-    <tbody>${rows}</tbody>
-  </table>`;
-}
-
-function renderStats(data) {
-  document.getElementById('reportStats').style.display='';
-  const total=data.length;
-  const complete=data.filter(r=>r.checkout&&r.checkout!=='').length;
-  const ot=data.filter(r=>r.overtime&&r.overtime!=='0:00'&&r.overtime!=='').length;
-  const mins=data.filter(r=>r.work_time).map(r=>{
-    const p=String(r.work_time).split(':');
-    return parseInt(p[0]||0)*60+parseInt(p[1]||0);
-  });
-  const avg=mins.length?Math.round(mins.reduce((a,b)=>a+b,0)/mins.length):0;
-  document.getElementById('stTotal').textContent   = total;
-  document.getElementById('stComplete').textContent= complete;
-  document.getElementById('stOT').textContent      = ot;
-  document.getElementById('stAvg').textContent     = avg?`${Math.floor(avg/60)}:${String(avg%60).padStart(2,'0')}`:'—';
-}
-
-// ============================================================
-// REPORT — EXPORT CSV
-// ============================================================
-function exportCSV() {
-  if (!reportData.length) { alert('ไม่มีข้อมูล'); return; }
-  const h=['วันที่','เวลา','รหัสพนักงาน','ชื่อ','ตำแหน่ง','ระดับ','เวลาเข้า','เวลาออก','ชั่วโมงทำงาน','OT'];
-  const rows=reportData.map(r=>[
-    r.date,r.time,r.emp_id,r.name,r.position,r.level,
-    r.checkin,r.checkout,r.work_time,r.overtime
-  ].map(v=>`"${v||''}"`).join(','));
-  const csv='\ufeff'+[h.join(','),...rows].join('\n');
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
-  a.download=`mkd2_report_${new Date().toISOString().slice(0,10)}.csv`;
-  a.click();
-}
-
-// ============================================================
-// HELPERS
-// ============================================================
-function showTblLoading() {
-  document.getElementById('reportStats').style.display='none';
-  document.getElementById('reportTableWrap').innerHTML=`<div class="tbl-state"><div class="tbl-spinner"></div><div class="tbl-msg">กำลังโหลด...</div></div>`;
-}
-function showTblError(msg) {
-  document.getElementById('reportTableWrap').innerHTML=`<div class="tbl-state"><div class="tbl-icon">❌</div><div class="tbl-msg">${msg}</div></div>`;
-}
-
-function fmtDate(s) {
-  try { return new Intl.DateTimeFormat('th-TH',{year:'numeric',month:'short',day:'numeric'}).format(new Date(s)); }
-  catch(e){ return s||'-'; }
-}
-
-async function gasPost(data) {
-  const r=await fetch(GAS_URL,{method:'POST',body:JSON.stringify(data)});
-  return await r.json();
-}
-
-function haversine(la1,ln1,la2,ln2) {
-  const R=6371000,f1=la1*Math.PI/180,f2=la2*Math.PI/180;
-  const df=(la2-la1)*Math.PI/180,dl=(ln2-ln1)*Math.PI/180;
-  const a=Math.sin(df/2)**2+Math.cos(f1)*Math.cos(f2)*Math.sin(dl/2)**2;
-  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
-}
-
 let toastTimer;
-function showToast(type,icon,title,msg) {
-  const t=document.getElementById('toast');
-  document.getElementById('tIcon').textContent =icon;
-  document.getElementById('tTitle').textContent=title;
-  document.getElementById('tMsg').textContent  =msg;
-  t.className='toast '+type+' show';
+function toast(icon, msg, type = 'ok', ms = 3500) {
   clearTimeout(toastTimer);
-  toastTimer=setTimeout(()=>t.classList.remove('show'),4500);
+  const el = document.getElementById('toast');
+  document.getElementById('tIcon').textContent = icon;
+  document.getElementById('tMsg').textContent  = msg;
+  el.className = `toast t-${type} show`;
+  toastTimer = setTimeout(() => el.classList.remove('show'), ms);
 }
 
 // ============================================================
-// INIT
+//  GPS
 // ============================================================
-window.addEventListener('load',()=>{
-  updateClock();
-  selType('checkin');
-  document.getElementById('empInp').addEventListener('keydown',e=>{
-    if(e.key==='Enter') submitAtt();
-  });
-  document.getElementById('loginPw').addEventListener('keydown',e=>{
-    if(e.key==='Enter') doLogin();
-  });
-  // ถ้า login อยู่แล้ว ข้าม login ไปเลย
-  if (sessionStorage.getItem('mkd2_admin')) {
-    document.querySelector('.home-btn.btn-report').onclick=()=>goTo('report');
+let uLat = null, uLng = null, uDist = null;
+const OFF_LAT = 14.1788252;
+const OFF_LNG = 100.6490192;
+const MAX_M   = 100;
+
+function haversine(la1, lo1, la2, lo2) {
+  const R = 6371000, r = Math.PI / 180;
+  const dlat = (la2 - la1) * r, dlng = (lo2 - lo1) * r;
+  const a = Math.sin(dlat/2)**2 + Math.cos(la1*r)*Math.cos(la2*r)*Math.sin(dlng/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+function setGPS(color, txt) {
+  const d = document.getElementById('gpsDot');
+  d.className = 'dot ' + color + (color === 'green' ? ' pulse' : '');
+  document.getElementById('gpsTxt').textContent = txt;
+}
+
+function startGPS() {
+  uLat = uLng = uDist = null;
+  setGPS('yellow', 'กำลังระบุตำแหน่ง...');
+  document.getElementById('distNote').textContent = '';
+  if (!navigator.geolocation) { setGPS('red', 'เบราว์เซอร์ไม่รองรับ GPS'); return; }
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      uLat  = pos.coords.latitude;
+      uLng  = pos.coords.longitude;
+      uDist = haversine(uLat, uLng, OFF_LAT, OFF_LNG);
+      const d = Math.round(uDist);
+      if (uDist <= MAX_M) {
+        setGPS('green', `✓ ตำแหน่งถูกต้อง (ห่าง ${d} ม.)`);
+      } else {
+        setGPS('red', `✗ อยู่นอกพื้นที่ (ห่าง ${d} ม.)`);
+      }
+      document.getElementById('distNote').innerHTML = `ห่างจากสำนักงาน <strong>${d} เมตร</strong>`;
+    },
+    err => {
+      const msgs = ['', 'กรุณาอนุญาตการเข้าถึงตำแหน่ง', 'ไม่พบสัญญาณ GPS', 'GPS หมดเวลา'];
+      setGPS('red', msgs[err.code] || 'ระบุตำแหน่งไม่ได้');
+    },
+    { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+  );
+}
+
+// ============================================================
+//  ACTION SELECT
+// ============================================================
+let action = 'in';
+
+function selAction(a) {
+  action = a;
+  document.getElementById('aIn').className  = 'action-btn' + (a === 'in'  ? ' sel-in'  : '');
+  document.getElementById('aOut').className = 'action-btn' + (a === 'out' ? ' sel-out' : '');
+  const btn = document.getElementById('subBtn');
+  if (a === 'in') {
+    btn.innerHTML = '✅ บันทึกเข้างาน';
+    btn.className = 'submit-btn btn-in';
+  } else {
+    btn.innerHTML = '🚪 บันทึกออกงาน';
+    btn.className = 'submit-btn btn-out';
   }
-});
+}
+
+// ============================================================
+//  *** CORE FIX: callGAS — ใช้ GET + ?payload=... ***
+// ============================================================
+async function callGAS(obj) {
+  if (GAS_URL === 'PASTE_YOUR_GAS_WEBAPP_URL_HERE') {
+    throw new Error('ยังไม่ได้ตั้งค่า GAS_URL ในไฟล์ HTML');
+  }
+  const url = GAS_URL + '?payload=' + encodeURIComponent(JSON.stringify(obj));
+  const res  = await fetch(url, { method: 'GET' });
+  const text = await res.text();
+
+  // *** ตรวจว่าได้ HTML กลับมาแทน JSON (สาเหตุ error เดิม) ***
+  if (text.trimStart().startsWith('<')) {
+    throw new Error('GAS ส่ง HTML กลับมา — กรุณา Re-deploy Web App อีกครั้ง\n(Deploy → New deployment → Anyone can access)');
+  }
+  return JSON.parse(text);
+}
+
+// ============================================================
+//  SUBMIT CHECKIN
+// ============================================================
+async function doSubmit() {
+  const id  = document.getElementById('empId').value.trim().toUpperCase();
+  const err = document.getElementById('errBox');
+  err.classList.remove('show');
+
+  if (!id)         { showErr('กรุณากรอกรหัสพนักงาน'); return; }
+  if (!uLat)       { showErr('ยังไม่ได้รับตำแหน่ง GPS กรุณารอสักครู่'); return; }
+  if (uDist > MAX_M) { showErr(`อยู่นอกพื้นที่ (ห่าง ${Math.round(uDist)} ม.) ต้องอยู่ภายใน ${MAX_M} ม.`); return; }
+
+  const btn = document.getElementById('subBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>กำลังบันทึก...';
+
+  try {
+    const data = await callGAS({
+      action:     action === 'in' ? 'checkin' : 'checkout',
+      employeeId: id,
+      lat:  uLat,
+      lng:  uLng,
+      dist: Math.round(uDist),
+      ts:   new Date().toISOString()
+    });
+
+    if (data.success) {
+      showResult(data);
+      showPage('pgResult');
+      toast('✅', action === 'in' ? 'บันทึกเข้างานสำเร็จ' : 'บันทึกออกงานสำเร็จ', 'ok');
+    } else {
+      showErr(data.message || 'เกิดข้อผิดพลาดจากเซิร์ฟเวอร์');
+    }
+  } catch (e) {
+    showErr('⚠️ ' + e.message);
+    toast('❌', 'เชื่อมต่อไม่ได้', 'err', 5000);
+  } finally {
+    btn.disabled = false;
+    selAction(action);
+  }
+}
+
+function showErr(msg) {
+  const b = document.getElementById('errBox');
+  b.textContent = msg; b.classList.add('show');
+}
+
+// ============================================================
+//  RESULT PAGE
+// ============================================================
+function showResult(d) {
+  const isIn = d.type === 'checkin';
+  const rows = [
+    d.name        && ['👤 ชื่อ',       d.name],
+    d.position    && ['🏷️ ตำแหน่ง',    d.position],
+    d.employeeId  && ['🪪 รหัส',        d.employeeId],
+    d.date        && ['📅 วันที่',       d.date],
+    d.time        && ['🕐 เวลา',         d.time],
+    d.workHours   && ['⏱️ ชั่วโมง',      d.workHours + ' ชม.'],
+    d.ot          && ['⭐ OT',           d.ot + ' ชม.'],
+  ].filter(Boolean);
+
+  const rowsHTML = rows.map(([k, v]) =>
+    `<div class="r-row"><span class="r-key">${k}</span><span class="r-val">${v}</span></div>`
+  ).join('');
+
+  document.getElementById('rCard').innerHTML = `
+    <div class="r-icon">${isIn ? '✅' : '👋'}</div>
+    <div class="r-title">${isIn ? 'บันทึกเข้างานสำเร็จ' : 'บันทึกออกงานสำเร็จ'}</div>
+    <div class="r-rows">${rowsHTML}</div>
+    ${d.ot ? `<div style="margin-top:14px;"><span class="r-badge ot">OT ${d.ot} ชม.</span></div>` : ''}
+  `;
+}
+
+// ============================================================
+//  ADMIN
+// ============================================================
+function doAdmLogin() {
+  if (document.getElementById('admPass').value === ADMIN_PASS) {
+    document.getElementById('admLogin').style.display = 'none';
+    document.getElementById('admPanel').style.display = 'block';
+    qToday(); doReport();
+  } else {
+    toast('❌', 'รหัสผ่านไม่ถูกต้อง', 'err');
+  }
+}
+
+function fmt(d) { return d.toISOString().split('T')[0]; }
+
+function qToday()  { const t=fmt(new Date()); document.getElementById('dFrom').value=t; document.getElementById('dTo').value=t; }
+function qWeek()   {
+  const n=new Date(), day=n.getDay();
+  const m=new Date(n); m.setDate(n.getDate()-(day===0?6:day-1));
+  const s=new Date(m); s.setDate(m.getDate()+6);
+  document.getElementById('dFrom').value=fmt(m); document.getElementById('dTo').value=fmt(s);
+}
+function qMonth()  {
+  const n=new Date();
+  document.getElementById('dFrom').value=fmt(new Date(n.getFullYear(),n.getMonth(),1));
+  document.getElementById('dTo').value  =fmt(new Date(n.getFullYear(),n.getMonth()+1,0));
+}
+
+async function doReport() {
+  const from=document.getElementById('dFrom').value, to=document.getElementById('dTo').value;
+  if (!from||!to) { toast('⚠️','กรุณาเลือกช่วงวันที่','err'); return; }
+  const btn=document.getElementById('rptBtn'), out=document.getElementById('rptOut');
+  btn.disabled=true; btn.innerHTML='<span class="spinner" style="border-top-color:#fff;margin-right:4px;"></span>โหลด';
+  out.innerHTML='<div class="loading-ph">⏳ กำลังโหลดข้อมูล...</div>';
+  try {
+    const d = await callGAS({ action:'report', dateFrom:from, dateTo:to });
+    if (!d.success || !d.rows || !d.rows.length) {
+      out.innerHTML='<div class="card" style="text-align:center;"><div style="font-size:36px;">📭</div><div style="margin-top:8px;color:var(--text2);">ไม่พบข้อมูลในช่วงนี้</div></div>';
+      return;
+    }
+    renderReport(d.rows);
+  } catch(e) {
+    out.innerHTML=`<div class="card" style="color:var(--red);">⚠️ ${e.message}</div>`;
+  } finally { btn.disabled=false; btn.innerHTML='🔍 โหลด'; }
+}
+
+function renderReport(rows) {
+  const html = `
+    <div class="card">
+      <div class="card-title" style="margin-bottom:12px;">📋 รายการ ${rows.length} รายการ</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>รหัส</th><th>ชื่อ</th><th>ประเภท</th><th>วันที่</th><th>เวลา</th></tr></thead>
+          <tbody>
+            ${rows.map(r=>`<tr>
+              <td>${r.employeeId||''}</td>
+              <td>${r.name||''}</td>
+              <td><span class="tag ${r.type==='checkin'?'in':'out'}">${r.type==='checkin'?'เข้า':'ออก'}</span></td>
+              <td>${r.date||''}</td>
+              <td>${r.time||''}</td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>`;
+  document.getElementById('rptOut').innerHTML = html;
+}
+
+// ============================================================
+//  SERVER STATUS
+// ============================================================
+async function checkServer() {
+  try {
+    if (GAS_URL === 'PASTE_YOUR_GAS_WEBAPP_URL_HERE') throw new Error('no url');
+    const d = await callGAS({ action:'ping' });
+    document.getElementById('svrDot').className = 'dot green pulse';
+    document.getElementById('svrTxt').textContent = '✓ ระบบพร้อมใช้งาน';
+  } catch(e) {
+    document.getElementById('svrDot').className = 'dot red';
+    document.getElementById('svrTxt').textContent =
+      GAS_URL === 'PASTE_YOUR_GAS_WEBAPP_URL_HERE'
+        ? '⚠️ ยังไม่ได้ตั้งค่า GAS URL'
+        : '✗ เชื่อมต่อไม่ได้ — ตรวจสอบ GAS URL';
+  }
+}
+
+// ============================================================
+//  INIT
+// ============================================================
+checkServer();
 </script>
 </body>
 </html>
