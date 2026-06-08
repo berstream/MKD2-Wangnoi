@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>MKD2 Wangnoi — ระบบลงเวลา</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ====== COLOR PALETTE: White + Blue + Dark Yellow + Red ====== */
+:root {
+  --bg:         #f4f6fb;
+  --bg2:        #ffffff;
+  --bg3:        #eef2f9;
+  --card:       #ffffff;
+  --border:     #d8e0ee;
+  --border2:    #e8edf6;
+  --text:       #1a2340;
+  --text2:      #5a6890;
+  --text3:      #9aa8c8;
+  --blue:       #1565c0;
+  --blue-dark:  #0d47a1;
+  --blue-light: #e3f2fd;
+  --green:      #2e7d32;
+  --green-light:#e8f5e9;
+  --red:        #c62828;
+  --red-light:  #ffebee;
+  --yellow:     #f57f17;
+  --yellow-light:#fff8e1;
+  --grad-in:    linear-gradient(135deg,#1565c0,#0d47a1);
+  --grad-out:   linear-gradient(135deg,#c62828,#8e0000);
+  --shadow:     0 4px 20px rgba(21,101,192,0.10);
+  --shadow2:    0 2px 8px rgba(21,101,192,0.08);
+  --glow-b:     0 0 0 3px rgba(21,101,192,0.15);
+  --glow-g:     0 0 0 3px rgba(46,125,50,0.15);
+  --glow-r:     0 0 0 3px rgba(198,40,40,0.15);
+  --transition: 0.2s ease;
+}
+
+*,*::before,*::after { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  font-family: 'Sarabun','Segoe UI','Noto Sans Thai',sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ====== HEADER ====== */
+.header {
+  position: sticky; top:0; z-index:200;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  padding: 0 18px;
+  height: 64px;
+  display: flex; align-items: center; justify-content: space-between;
+  box-shadow: var(--shadow2);
+}
+.header-left { display:flex; align-items:center; gap:12px; }
+.header-logo {
+  width:40px; height:40px; border-radius:10px;
+  background: var(--grad-in);
+  display:flex; align-items:center; justify-content:center;
+  color:#fff; font-size:20px; font-weight:800;
+  box-shadow: var(--shadow2);
+}
+.header-text .title { font-size:17px; font-weight:800; color:var(--text); letter-spacing:.2px; }
+.header-text .sub { font-size:11px; color:var(--text2); margin-top:1px; }
+
+/* ====== PAGES ====== */
+.page { display:none; padding:20px 18px; max-width:520px; margin:0 auto; }
+.page.active { display:block; animation: fadeUp .3s ease; }
+@keyframes fadeUp { from {opacity:0; transform:translateY(8px)} to {opacity:1; transform:translateY(0)} }
+
+/* ====== CARD ====== */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 18px;
+  margin-bottom: 14px;
+  box-shadow: var(--shadow2);
+}
+.card-title {
+  font-size: 12px; font-weight: 700; color: var(--text2);
+  text-transform: uppercase; letter-spacing: .8px;
+  margin-bottom: 12px;
+  display: flex; align-items: center; gap: 6px;
+}
+
+/* ====== STATUS BAR ====== */
+.status-bar {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  font-size: 14px; font-weight: 500;
+}
+.dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+  transition: all .3s;
+}
+.dot.green  { background: var(--green); box-shadow: 0 0 0 4px rgba(46,125,50,.15); }
+.dot.red    { background: var(--red);   box-shadow: 0 0 0 4px rgba(198,40,40,.15); }
+.dot.yellow { background: var(--yellow); box-shadow: 0 0 0 4px rgba(245,127,23,.15); }
+.dot.pulse.green { animation: pulseG 1.5s infinite; }
+@keyframes pulseG {
+  0%,100% { box-shadow: 0 0 0 4px rgba(46,125,50,.15); }
+  50%     { box-shadow: 0 0 0 8px rgba(46,125,50,.30); }
+}
+
+/* ====== HOME ====== */
+.home-hero { text-align: center; padding: 28px 0 24px; }
+.home-hero .h-logo {
+  width: 72px; height: 72px; border-radius: 18px;
+  background: var(--grad-in);
+  display: inline-flex; align-items: center; justify-content: center;
+  color: #fff; font-size: 32px; font-weight: 800;
+  box-shadow: var(--shadow);
+  margin-bottom: 14px;
+}
+.home-hero .h-title { font-size: 26px; font-weight: 800; color: var(--text); letter-spacing: -.3px; }
+.home-hero .h-sub { font-size: 14px; color: var(--text2); margin-top: 4px; }
+
+.menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+.menu-card {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: 16px;
+  padding: 22px 14px;
+  text-align: center;
+  cursor: pointer;
+  transition: all var(--transition);
+  box-shadow: var(--shadow2);
+}
+.menu-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+.menu-card:active { transform: scale(.97); }
+.menu-card .m-icon {
+  width: 48px; height: 48px; border-radius: 12px;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 24px; color: #fff;
+  margin-bottom: 10px;
+}
+.menu-card.c-blue  .m-icon { background: var(--grad-in); }
+.menu-card.c-yellow .m-icon { background: linear-gradient(135deg,#f57f17,#e65100); }
+.menu-card.c-blue  { border-color: var(--blue-light); }
+.menu-card.c-blue:hover  { border-color: var(--blue); }
+.menu-card.c-yellow { border-color: #ffe082; }
+.menu-card.c-yellow:hover { border-color: var(--yellow); }
+.menu-card .m-title { font-size: 16px; font-weight: 700; color: var(--text); }
+.menu-card .m-sub { font-size: 12px; color: var(--text2); margin-top: 3px; }
+
+/* ====== BACK & PAGE TITLE ====== */
+.back-btn {
+  background: none; border: none; color: var(--blue);
+  font-size: 14px; font-weight: 600; cursor: pointer;
+  padding: 6px 0; margin-bottom: 14px;
+  display: flex; align-items: center; gap: 4px;
+  font-family: inherit;
+}
+.back-btn:hover { opacity: .75; }
+.page-title {
+  font-size: 22px; font-weight: 800;
+  margin-bottom: 18px;
+  display: flex; align-items: center; gap: 8px;
+  color: var(--text);
+}
+
+/* ====== ACTION GRID ====== */
+.action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+.action-btn {
+  padding: 18px 12px; border-radius: 14px;
+  border: 2px solid var(--border);
+  background: var(--bg2);
+  cursor: pointer; text-align: center;
+  transition: all var(--transition);
+  user-select: none;
+}
+.action-btn:active { transform: scale(.96); }
+.action-btn .ab-dot {
+  width: 16px; height: 16px; border-radius: 50%;
+  background: var(--border); margin: 0 auto 8px;
+  transition: all var(--transition);
+}
+.action-btn .ab-label { font-size: 15px; font-weight: 700; color: var(--text2); }
+.action-btn.sel-in  { border-color: var(--blue); background: var(--blue-light); }
+.action-btn.sel-out { border-color: var(--red);  background: var(--red-light); }
+.action-btn.sel-in  .ab-dot   { background: var(--blue); box-shadow: 0 0 0 4px rgba(21,101,192,.2); }
+.action-btn.sel-out .ab-dot   { background: var(--red);  box-shadow: 0 0 0 4px rgba(198,40,40,.2); }
+.action-btn.sel-in  .ab-label { color: var(--blue-dark); }
+.action-btn.sel-out .ab-label { color: var(--red); }
+
+/* ====== INPUT ====== */
+.input-group { margin-bottom: 14px; }
+.input-label {
+  font-size: 12px; font-weight: 700; color: var(--text2);
+  letter-spacing: .5px; text-transform: uppercase;
+  display: block; margin-bottom: 6px;
+}
+.input-field {
+  width: 100%; padding: 13px 15px;
+  border-radius: 12px;
+  border: 1.5px solid var(--border);
+  background: var(--bg2);
+  color: var(--text);
+  font-size: 16px; font-weight: 600; letter-spacing: 1px;
+  transition: all var(--transition);
+  font-family: inherit;
+  -webkit-appearance: none;
+}
+.input-field:focus { outline: none; border-color: var(--blue); box-shadow: var(--glow-b); }
+.input-field::placeholder { color: var(--text3); font-weight: 400; letter-spacing: 0; }
+
+/* ====== SUBMIT BUTTON ====== */
+.submit-btn {
+  width: 100%; padding: 16px;
+  border-radius: 14px; border: none;
+  font-size: 16px; font-weight: 700;
+  cursor: pointer; color: #fff;
+  transition: all var(--transition);
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  font-family: inherit;
+}
+.submit-btn:active { transform: scale(.98); }
+.submit-btn:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+.submit-btn.btn-in  { background: var(--grad-in); box-shadow: 0 4px 14px rgba(21,101,192,.3); }
+.submit-btn.btn-out { background: var(--grad-out); box-shadow: 0 4px 14px rgba(198,40,40,.3); }
+.submit-btn.btn-neu { background: var(--bg2); color: var(--text); border: 1.5px solid var(--border); }
+.submit-btn.btn-neu:hover { background: var(--bg3); }
+
+/* ====== SPINNER ====== */
+.spinner {
+  display: inline-block; width: 17px; height: 17px;
+  border: 2px solid rgba(255,255,255,.4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+}
+.btn-neu .spinner { border-color: rgba(26,35,64,.2); border-top-color: var(--text); }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ====== DISTANCE NOTE ====== */
+.dist-note { text-align: center; font-size: 13px; color: var(--text2); margin-top: 10px; min-height: 20px; }
+.dist-note strong { color: var(--text); }
+
+/* ====== ERROR BOX ====== */
+.err-box {
+  background: var(--red-light);
+  border: 1px solid var(--red);
+  border-radius: 12px; padding: 12px 14px;
+  font-size: 13px; color: var(--red);
+  margin-bottom: 14px;
+  display: none;
+  font-weight: 500;
+}
+.err-box.show { display: block; animation: fadeUp .2s ease; }
+
+/* ====== TOAST ====== */
+.toast {
+  position: fixed; top: 20px; left: 50%;
+  transform: translateX(-50%) translateY(-120px);
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px 22px;
+  min-width: 260px; max-width: 340px;
+  text-align: center;
+  box-shadow: var(--shadow);
+  z-index: 999;
+  transition: transform .3s cubic-bezier(.34,1.56,.64,1);
+}
+.toast.show { transform: translateX(-50%) translateY(0); }
+.toast.t-ok  { border-top: 3px solid var(--green); }
+.toast.t-err { border-top: 3px solid var(--red); }
+.toast .t-icon { font-size: 26px; margin-bottom: 4px; }
+.toast .t-msg { font-size: 14px; font-weight: 500; color: var(--text); white-space: pre-line; }
+
+/* ====== RESULT CARD ====== */
+.result-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 18px; padding: 28px 22px;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+.result-card .r-icon {
+  width: 72px; height: 72px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 36px; color: #fff;
+  margin-bottom: 14px;
+}
+.result-card .r-icon.in  { background: var(--grad-in); }
+.result-card .r-icon.out { background: var(--grad-out); }
+.result-card .r-title { font-size: 22px; font-weight: 800; margin-bottom: 14px; color: var(--text); }
+.result-card .r-rows { text-align: left; display: inline-block; min-width: 240px; }
+.r-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border2);
+  font-size: 15px;
+}
+.r-row:last-child { border-bottom: none; }
+.r-row .r-key { color: var(--text2); font-size: 13px; width: 100px; flex-shrink: 0; }
+.r-row .r-val { font-weight: 600; color: var(--text); }
+.r-badge {
+  display: inline-block; padding: 4px 14px;
+  border-radius: 20px;
+  font-size: 13px; font-weight: 700;
+}
+.r-badge.ot { background: var(--yellow-light); color: var(--yellow); border: 1px solid var(--yellow); }
+
+/* ====== ADMIN ====== */
+.date-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+.btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.sm-btn {
+  padding: 9px 16px; border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg2); color: var(--text);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  transition: all var(--transition);
+  white-space: nowrap;
+  font-family: inherit;
+}
+.sm-btn:hover { border-color: var(--blue); }
+.sm-btn.primary { background: var(--blue); border-color: var(--blue); color: #fff; }
+.sm-btn.primary:hover { background: var(--blue-dark); }
+.sm-btn:disabled { opacity: .4; cursor: not-allowed; }
+
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+thead tr { background: var(--bg3); }
+th { padding: 11px 10px; text-align: left; font-size: 12px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; color: var(--text2); border-bottom: 1px solid var(--border); white-space: nowrap; }
+td { padding: 10px; border-bottom: 1px solid var(--border2); color: var(--text); }
+tr:last-child td { border-bottom: none; }
+tbody tr:hover { background: var(--bg3); }
+
+.tag {
+  display: inline-block; padding: 3px 10px; border-radius: 20px;
+  font-size: 12px; font-weight: 700;
+}
+.tag.in  { background: var(--blue-light); color: var(--blue-dark); }
+.tag.out { background: var(--red-light);  color: var(--red); }
+
+.loading-ph { text-align: center; padding: 30px; color: var(--text2); font-size: 14px; }
+
+/* ====== RESPONSIVE ====== */
+@media (max-width:400px){
+  .page { padding: 16px 14px; }
+  .menu-grid { grid-template-columns: 1fr; }
+  .home-hero { padding: 20px 0; }
+}
+</style>
+</head>
+<body>
+
+<!-- ===== HEADER ===== -->
+<div class="header">
+  <div class="header-left">
+    <div class="header-logo">M</div>
+    <div class="header-text">
+      <div class="title">MKD2 Wangnoi</div>
+      <div class="sub">Makro Distribution Center</div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== TOAST ===== -->
+<div class="toast" id="toast">
+  <div class="t-icon" id="tIcon"></div>
+  <div class="t-msg"  id="tMsg"></div>
+</div>
+
+<!-- ============ PAGE: HOME ============ -->
+<div class="page active" id="pgHome">
+  <div class="home-hero">
+    <div class="h-logo">M</div>
+    <div class="h-title">MKD2 Wangnoi</div>
+    <div class="h-sub">ระบบลงเวลาเข้า-ออกงาน</div>
+  </div>
+
+  <div class="menu-grid">
+    <div class="menu-card c-blue" onclick="showPage('pgCheckin')">
+      <div class="m-icon">🕐</div>
+      <div class="m-title">ลงเวลางาน</div>
+      <div class="m-sub">เข้างาน / ออกงาน</div>
+    </div>
+    <div class="menu-card c-yellow" onclick="showPage('pgAdmin')">
+      <div class="m-icon">📊</div>
+      <div class="m-title">รายงาน</div>
+      <div class="m-sub">ข้อมูลการเข้างาน</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">⚙️ สถานะระบบ</div>
+    <div class="status-bar" id="svrBar">
+      <div class="dot yellow" id="svrDot"></div>
+      <span id="svrTxt">กำลังตรวจสอบ...</span>
+    </div>
+  </div>
+</div>
+
+<!-- ============ PAGE: CHECKIN ============ -->
+<div class="page" id="pgCheckin">
+  <button class="back-btn" onclick="showPage('pgHome')">‹ กลับหน้าหลัก</button>
+  <div class="page-title">⏱️ ลงเวลาเข้า-ออกงาน</div>
+
+  <div class="status-bar" id="gpsBar" style="margin-bottom:14px;">
+    <div class="dot yellow pulse" id="gpsDot"></div>
+    <span id="gpsTxt">กำลังระบุตำแหน่ง...</span>
+  </div>
+
+  <div class="err-box" id="errBox"></div>
+
+  <div class="action-grid">
+    <div class="action-btn sel-in" id="aIn" onclick="selAction('in')">
+      <div class="ab-dot"></div>
+      <div class="ab-label">เข้างาน</div>
+    </div>
+    <div class="action-btn" id="aOut" onclick="selAction('out')">
+      <div class="ab-dot"></div>
+      <div class="ab-label">ออกงาน</div>
+    </div>
+  </div>
+
+  <div class="input-group">
+    <label class="input-label">รหัสพนักงาน</label>
+    <input type="text" class="input-field" id="empId"
+           placeholder="เช่น TH061378" maxlength="20"
+           oninput="this.value=this.value.toUpperCase()">
+  </div>
+
+  <button class="submit-btn btn-in" id="subBtn" onclick="doSubmit()">
+    ✓ บันทึกเข้างาน
+  </button>
+
+  <div class="dist-note" id="distNote"></div>
+</div>
+
+<!-- ============ PAGE: RESULT ============ -->
+<div class="page" id="pgResult">
+  <button class="back-btn" onclick="showPage('pgCheckin')">‹ ลงเวลาอีกครั้ง</button>
+  <div class="result-card" id="rCard"></div>
+  <button class="submit-btn btn-neu" style="margin-top:14px;" onclick="showPage('pgHome')">
+    กลับหน้าหลัก
+  </button>
+</div>
+
+<!-- ============ PAGE: ADMIN ============ -->
+<div class="page" id="pgAdmin">
+  <button class="back-btn" onclick="showPage('pgHome')">‹ กลับหน้าหลัก</button>
+  <div class="page-title">📊 รายงานการเข้างาน</div>
+
+  <div class="card" id="admLogin">
+    <div style="text-align:center; margin-bottom:18px;">
+      <div style="font-size:36px;">🔒</div>
+      <div style="font-weight:700; margin-top:8px; font-size:16px;">ยืนยันตัวตนผู้ดูแล</div>
+    </div>
+    <div class="input-group">
+      <label class="input-label">รหัสผ่าน</label>
+      <input type="password" class="input-field" id="admPass" placeholder="••••••"
+             onkeydown="if(event.key==='Enter')doAdmLogin()">
+    </div>
+    <button class="submit-btn btn-in" onclick="doAdmLogin()">เข้าสู่ระบบ</button>
+  </div>
+
+  <div id="admPanel" style="display:none;">
+    <div class="card">
+      <div class="card-title">📅 เลือกช่วงเวลา</div>
+      <div class="date-row">
+        <div>
+          <label class="input-label">วันที่เริ่ม</label>
+          <input type="date" class="input-field" id="dFrom" style="font-size:14px;padding:11px 12px;">
+        </div>
+        <div>
+          <label class="input-label">วันที่สิ้นสุด</label>
+          <input type="date" class="input-field" id="dTo" style="font-size:14px;padding:11px 12px;">
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="sm-btn" onclick="qToday()">วันนี้</button>
+        <button class="sm-btn" onclick="qWeek()">สัปดาห์นี้</button>
+        <button class="sm-btn" onclick="qMonth()">เดือนนี้</button>
+        <button class="sm-btn primary" onclick="doReport()" id="rptBtn">🔍 โหลด</button>
+      </div>
+    </div>
+    <div id="rptOut"></div>
+  </div>
+</div>
+
+<!-- ============================================ SCRIPT ============================================ -->
+<script>
+// ============== CONFIG ==============
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbxv_PGtkk09qrTtd00QTaGcblUR-25QTptLlonfyZABQUTKMEeVl8RCA8K5nEsnNTyPEA/exec';
+const ADMIN_PASS = 'mkd2admin';
+
+// ============== NAVIGATION ==============
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  if (id === 'pgCheckin') startGPS();
+}
+
+// ============== TOAST ==============
+let toastTimer;
+function toast(icon, msg, type = 'ok', ms = 3500) {
+  clearTimeout(toastTimer);
+  const el = document.getElementById('toast');
+  document.getElementById('tIcon').textContent = icon;
+  document.getElementById('tMsg').textContent = msg;
+  el.className = `toast t-${type} show`;
+  toastTimer = setTimeout(() => el.classList.remove('show'), ms);
+}
+
+// ============== GPS ==============
+let uLat = null, uLng = null, uDist = null;
+const OFF_LAT = 14.1788252;
+const OFF_LNG = 100.6490192;
+const MAX_M   = 100;
+
+function haversine(la1, lo1, la2, lo2) {
+  const R = 6371000, r = Math.PI / 180;
+  const dlat = (la2 - la1) * r, dlng = (lo2 - lo1) * r;
+  const a = Math.sin(dlat/2)**2 + Math.cos(la1*r)*Math.cos(la2*r)*Math.sin(dlng/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+function setGPS(color, txt) {
+  const d = document.getElementById('gpsDot');
+  d.className = 'dot ' + color + (color === 'green' ? ' pulse' : '');
+  document.getElementById('gpsTxt').textContent = txt;
+}
+
+function startGPS() {
+  uLat = uLng = uDist = null;
+  setGPS('yellow', 'กำลังระบุตำแหน่ง...');
+  document.getElementById('distNote').textContent = '';
+  if (!navigator.geolocation) { setGPS('red', 'เบราว์เซอร์ไม่รองรับ GPS'); return; }
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      uLat = pos.coords.latitude;
+      uLng = pos.coords.longitude;
+      uDist = haversine(uLat, uLng, OFF_LAT, OFF_LNG);
+      const d = Math.round(uDist);
+      if (uDist <= MAX_M) {
+        setGPS('green', `✓ ตำแหน่งถูกต้อง (ห่าง ${d} ม.)`);
+      } else {
+        setGPS('red', `✗ อยู่นอกพื้นที่ (ห่าง ${d} ม.)`);
+      }
+      document.getElementById('distNote').innerHTML = `ห่างจากสำนักงาน <strong>${d} เมตร</strong>`;
+    },
+    err => {
+      const msgs = ['', 'กรุณาอนุญาตการเข้าถึงตำแหน่ง', 'ไม่พบสัญญาณ GPS', 'GPS หมดเวลา'];
+      setGPS('red', msgs[err.code] || 'ระบุตำแหน่งไม่ได้');
+    },
+    { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+  );
+}
+
+// ============== ACTION SELECT ==============
+let action = 'in';
+
+function selAction(a) {
+  action = a;
+  document.getElementById('aIn').className  = 'action-btn' + (a === 'in'  ? ' sel-in'  : '');
+  document.getElementById('aOut').className = 'action-btn' + (a === 'out' ? ' sel-out' : '');
+  const btn = document.getElementById('subBtn');
+  if (a === 'in') {
+    btn.innerHTML = '✓ บันทึกเข้างาน';
+    btn.className = 'submit-btn btn-in';
+  } else {
+    btn.innerHTML = '⊗ บันทึกออกงาน';
+    btn.className = 'submit-btn btn-out';
+  }
+}
+
+// ============== CALL GAS (GET + payload) ==============
+async function callGAS(obj) {
+  const url = GAS_URL + '?payload=' + encodeURIComponent(JSON.stringify(obj));
+  const res = await fetch(url, { method: 'GET', redirect: 'follow' });
+  const text = await res.text();
+  if (text.trimStart().startsWith('<')) {
+    throw new Error('GAS ส่ง HTML กลับ — กรุณา Re-deploy Web App\n(Anyone can access)');
+  }
+  return JSON.parse(text);
+}
+
+// ============== SUBMIT ==============
+async function doSubmit() {
+  const id = document.getElementById('empId').value.trim().toUpperCase();
+  const err = document.getElementById('errBox');
+  err.classList.remove('show');
+
+  if (!id)            { showErr('กรุณากรอกรหัสพนักงาน'); return; }
+  if (!uLat)          { showErr('ยังไม่ได้รับตำแหน่ง GPS กรุณารอสักครู่'); return; }
+  if (uDist > MAX_M)  { showErr(`อยู่นอกพื้นที่ (ห่าง ${Math.round(uDist)} ม.) ต้องอยู่ภายใน ${MAX_M} ม.`); return; }
+
+  const btn = document.getElementById('subBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>กำลังบันทึก...';
+
+  try {
+    const data = await callGAS({
+      action:     action === 'in' ? 'checkin' : 'checkout',
+      employeeId: id,
+      lat:  uLat,
+      lng:  uLng,
+      dist: Math.round(uDist),
+      ts:   new Date().toISOString()
+    });
+
+    if (data.success) {
+      showResult(data);
+      showPage('pgResult');
+      toast('✓', action === 'in' ? 'บันทึกเข้างานสำเร็จ' : 'บันทึกออกงานสำเร็จ', 'ok');
+    } else {
+      showErr(data.message || 'เกิดข้อผิดพลาด');
+    }
+  } catch (e) {
+    showErr('⚠ ' + e.message);
+    toast('✗', 'เชื่อมต่อไม่ได้', 'err', 5000);
+  } finally {
+    btn.disabled = false;
+    selAction(action);
+  }
+}
+
+function showErr(msg) {
+  const b = document.getElementById('errBox');
+  b.textContent = msg;
+  b.classList.add('show');
+}
+
+// ============== RESULT PAGE ==============
+function showResult(d) {
+  const isIn = d.type === 'checkin';
+  const rows = [
+    d.name        && ['👤 ชื่อ',       d.name],
+    d.position    && ['🏷️ ตำแหน่ง',   d.position],
+    d.employeeId  && ['🪪 รหัส',       d.employeeId],
+    d.date        && ['📅 วันที่',     d.date],
+    d.time        && ['🕐 เวลา',       d.time],
+    d.workHours   && ['⏱️ ชั่วโมง',   d.workHours + ' ชม.'],
+  ].filter(Boolean);
+
+  const rowsHTML = rows.map(([k, v]) =>
+    `<div class="r-row"><span class="r-key">${k}</span><span class="r-val">${v}</span></div>`
+  ).join('');
+
+  document.getElementById('rCard').innerHTML = `
+    <div class="r-icon ${isIn ? 'in' : 'out'}">${isIn ? '✓' : '⊗'}</div>
+    <div class="r-title">${isIn ? 'บันทึกเข้างานสำเร็จ' : 'บันทึกออกงานสำเร็จ'}</div>
+    <div class="r-rows">${rowsHTML}</div>
+    ${d.ot ? `<div style="margin-top:14px;"><span class="r-badge ot">⭐ OT ${d.ot} ชม.</span></div>` : ''}
+  `;
+}
+
+// ============== ADMIN ==============
+function doAdmLogin() {
+  if (document.getElementById('admPass').value === ADMIN_PASS) {
+    document.getElementById('admLogin').style.display = 'none';
+    document.getElementById('admPanel').style.display = 'block';
+    qToday(); doReport();
+  } else {
+    toast('✗', 'รหัสผ่านไม่ถูกต้อง', 'err');
+  }
+}
+
+function fmt(d) { return d.toISOString().split('T')[0]; }
+function qToday() {
+  const t = fmt(new Date());
+  document.getElementById('dFrom').value = t;
+  document.getElementById('dTo').value = t;
+}
+function qWeek() {
+  const n = new Date(), day = n.getDay();
+  const m = new Date(n); m.setDate(n.getDate() - (day === 0 ? 6 : day - 1));
+  const s = new Date(m); s.setDate(m.getDate() + 6);
+  document.getElementById('dFrom').value = fmt(m);
+  document.getElementById('dTo').value = fmt(s);
+}
+function qMonth() {
+  const n = new Date();
+  document.getElementById('dFrom').value = fmt(new Date(n.getFullYear(), n.getMonth(), 1));
+  document.getElementById('dTo').value   = fmt(new Date(n.getFullYear(), n.getMonth() + 1, 0));
+}
+
+async function doReport() {
+  const from = document.getElementById('dFrom').value;
+  const to   = document.getElementById('dTo').value;
+  if (!from || !to) { toast('⚠', 'กรุณาเลือกช่วงวันที่', 'err'); return; }
+
+  const btn = document.getElementById('rptBtn');
+  const out = document.getElementById('rptOut');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner" style="border-color:rgba(255,255,255,.4);border-top-color:#fff;"></span> โหลด';
+  out.innerHTML = '<div class="loading-ph">⏳ กำลังโหลดข้อมูล...</div>';
+
+  try {
+    const d = await callGAS({ action: 'report', dateFrom: from, dateTo: to });
+    if (!d.success || !d.rows || !d.rows.length) {
+      out.innerHTML = '<div class="card" style="text-align:center;"><div style="font-size:36px;">📭</div><div style="margin-top:8px;color:var(--text2);">ไม่พบข้อมูลในช่วงนี้</div></div>';
+      return;
+    }
+    renderReport(d.rows);
+  } catch (e) {
+    out.innerHTML = `<div class="card" style="color:var(--red);">⚠ ${e.message}</div>`;
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '🔍 โหลด';
+  }
+}
+
+function renderReport(rows) {
+  const html = `
+    <div class="card">
+      <div class="card-title" style="margin-bottom:12px;">📋 รายงาน ${rows.length} รายการ</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>รหัส</th><th>ชื่อ</th><th>ประเภท</th><th>วันที่</th><th>เวลา</th>
+          </tr></thead>
+          <tbody>
+            ${rows.map(r => `<tr>
+              <td>${r.employeeId || ''}</td>
+              <td>${r.name || ''}</td>
+              <td><span class="tag ${r.type === 'checkin' ? 'in' : 'out'}">${r.type === 'checkin' ? 'เข้า' : 'ออก'}</span></td>
+              <td>${r.date || ''}</td>
+              <td>${r.time || ''}</td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>`;
+  document.getElementById('rptOut').innerHTML = html;
+}
+
+// ============== SERVER STATUS ==============
+async function checkServer() {
+  try {
+    const d = await callGAS({ action: 'ping' });
+    document.getElementById('svrDot').className = 'dot green pulse';
+    document.getElementById('svrTxt').textContent = '✓ ระบบพร้อมใช้งาน';
+  } catch (e) {
+    document.getElementById('svrDot').className = 'dot red';
+    document.getElementById('svrTxt').textContent = '✗ เชื่อมต่อไม่ได้ — ตรวจสอบ GAS URL';
+  }
+}
+
+// ============== INIT ==============
+checkServer();
+</script>
+</body>
+</html>
