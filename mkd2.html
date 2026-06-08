@@ -731,6 +731,22 @@ async function doReport() {
   }
 }
 
+// ดึงเฉพาะ H:mm จากค่าที่อาจเพี้ยน (เช่น "Sat Dec 30 1899 14:00:00...")
+function cleanDur(v) {
+  if (!v) return '';
+  v = String(v).trim();
+  const m = v.match(/(\d{1,2}):(\d{2})(?::\d{2})?/);
+  if (m) return m[1] + ':' + m[2];
+  return v;
+}
+function cleanTime(v) {
+  if (!v) return '';
+  v = String(v).trim();
+  const m = v.match(/(\d{1,2}):(\d{2}):(\d{2})/) || v.match(/(\d{1,2}):(\d{2})/);
+  if (m) return m[0];
+  return v;
+}
+
 function renderReport(rows) {
   const empSearch = document.getElementById('empSearch').value.trim();
   const title = empSearch
@@ -738,18 +754,20 @@ function renderReport(rows) {
     : `\ud83d\udccb รายงาน ${rows.length} รายการ`;
 
   const tbody = rows.map(r => {
+    const wh = cleanDur(r.workHours);
+    const ot = cleanDur(r.ot);
     const hasOut  = r.checkout && r.checkout !== '';
-    const hasWork = r.workHours && r.workHours !== '';
-    const hasOT   = r.ot && r.ot !== '' && r.ot !== '0:00';
+    const hasWork = wh && wh !== '';
+    const hasOT   = ot && ot !== '' && ot !== '0:00';
     return `<tr>
       <td>${r.employeeId||''}</td>
       <td>${r.name||''}</td>
       <td>${r.position||''}</td>
       <td>${r.date||''}</td>
-      <td><span class="tag in">เข้า</span> ${r.checkin||'-'}</td>
-      <td>${hasOut ? '<span class="tag out">ออก</span> '+r.checkout : '<span style="color:var(--text3);">-</span>'}</td>
-      <td>${hasWork ? r.workHours+' ชม.' : '-'}</td>
-      <td>${hasOT ? '<span class="r-badge ot">'+r.ot+' ชม.</span>' : '-'}</td>
+      <td><span class="tag in">เข้า</span> ${cleanTime(r.checkin)||'-'}</td>
+      <td>${hasOut ? '<span class="tag out">ออก</span> '+cleanTime(r.checkout) : '<span style="color:var(--text3);">-</span>'}</td>
+      <td>${hasWork ? wh+' ชม.' : '-'}</td>
+      <td>${hasOT ? '<span class="r-badge ot">'+ot+' ชม.</span>' : '-'}</td>
     </tr>`;
   }).join('');
 
@@ -780,7 +798,7 @@ function exportCSV() {
   const header = ['รหัสพนักงาน','ชื่อ','ตำแหน่ง','ระดับ','วันที่','เวลาเข้า','เวลาออก','ชั่วโมงทำงาน','OT'];
   const rows = reportData.map(r => [
     r.employeeId||'', r.name||'', r.position||'', r.level||'',
-    r.date||'', r.checkin||'', r.checkout||'', r.workHours||'', r.ot||''
+    r.date||'', cleanTime(r.checkin), cleanTime(r.checkout), cleanDur(r.workHours), cleanDur(r.ot)
   ]);
   const csv = [header, ...rows].map(r =>
     r.map(v => '"' + String(v).replace(/"/g,'""') + '"').join(',')
@@ -806,16 +824,18 @@ function printReport() {
   const emp  = document.getElementById('empSearch').value.trim();
   const title = emp ? `รายงาน MKD2 — ${emp} (${from} ถึง ${to})` : `รายงาน MKD2 (${from} ถึง ${to})`;
 
-  const tbody = reportData.map(r => `<tr>
+  const tbody = reportData.map(r => {
+    const wh=cleanDur(r.workHours), ot=cleanDur(r.ot);
+    return `<tr>
     <td>${r.employeeId||''}</td>
     <td>${r.name||''}</td>
     <td>${r.position||''}</td>
     <td>${r.date||''}</td>
-    <td>${r.checkin||'-'}</td>
-    <td>${r.checkout||'-'}</td>
-    <td>${r.workHours||'-'}</td>
-    <td>${r.ot&&r.ot!=='0:00'?r.ot:'-'}</td>
-  </tr>`).join('');
+    <td>${cleanTime(r.checkin)||'-'}</td>
+    <td>${cleanTime(r.checkout)||'-'}</td>
+    <td>${wh||'-'}</td>
+    <td>${ot&&ot!=='0:00'?ot:'-'}</td>
+  </tr>`;}).join('');
 
   const win = window.open('', '_blank');
   win.document.write(`<!DOCTYPE html><html lang="th"><head>
